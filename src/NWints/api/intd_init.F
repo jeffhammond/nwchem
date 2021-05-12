@@ -24,18 +24,18 @@ c:tex-\begin{verbatim}
       subroutine intd_init(rtdb,nbas,bases)
 c:tex-\end{verbatim}
       implicit none
-#include "stdio.fh"
+#include "bas.fh"
 #include "errquit.fh"
+#include "apiP.fh"
+#include "candoP.fh"
 #include "global.fh"
 #include "mafdecls.fh"
-#include "bas.fh"
-#include "apiP.fh"
 #include "rtdb.fh"
-#include "candoP.fh"
 #include "nwc_const.fh"
 #include "int_nbf.fh"
 #include "util.fh"
 #include "rel_consts.fh"
+#include "stdio.fh"
 c
 c This routine is a wrapper around the original intd_init which is now
 c called intd_init_org. The reason for this extension is related to the
@@ -73,7 +73,7 @@ c     Setup array with basis sets from bases
 c
       if (.not. ma_push_get(MT_INT,nbas+1,'mybases',mybm_a,mybIm_a))
      $     call errquit('int_init: ma_push_get failed mybases',0,
-     &           INT_ERR)
+     &       INT_ERR)
       do 00500 ibas = 1, nbas
          int_mb(mybIm_a+ibas-1) = bases(ibas)
 00500 continue
@@ -130,17 +130,17 @@ c
 c Initializes integral derivative code 
 c
       implicit none
-#include "stdio.fh"
+#include "bas.fh"
 #include "errquit.fh"
+#include "apiP.fh"
+#include "candoP.fh"
 #include "global.fh"
 #include "mafdecls.fh"
-#include "bas.fh"
-#include "apiP.fh"
 #include "rtdb.fh"
-#include "candoP.fh"
 #include "nwc_const.fh"
 #include "int_nbf.fh"
 #include "util.fh"
+#include "stdio.fh"
 c::functions
       logical  spcart_init
       external spcart_init
@@ -151,19 +151,17 @@ c::functions
       logical  texas_check_basis_ok
       external texas_check_basis_ok
 c::passed
-      integer rtdb        ! [input] run time data base handle
-      integer nbas        ! [input] number of basis sets to be used
-      integer bases(nbas) ! [input] basis set handles
+      integer rtdb        !< [Input] run time data base handle
+      integer nbas        !< [Input] number of basis sets to be used
+      integer bases(nbas) !< [Input] basis set handles
 c::local
-      integer ibas, ang2use, angm
+      integer txs_mem_min ! memory from texas
+      integer ibas, ang2use, angm, type
       logical status, oprint
       integer intd_memtmp
       integer nqmax_texas  ! maximum number of quartets in texas blocking interface
       parameter (nqmax_texas = 10000)
-      integer txs_mem_min
-      integer type
       logical cando_txs_deriv
-c
 c
 c     print info/warnings unless print set to none. errors always print.
 c
@@ -180,7 +178,7 @@ c
       if(init_intd.eq.1 .and. oprint) then
         write(luout,*)' warning nested intd_inits'
         write(luout,*)' intd_init already called '
-        call util_flush(6)
+        call util_flush(luout)
       endif
 c
 c initialize type-> nbf maps
@@ -220,7 +218,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intd_init: cando_sp set to always be ',def_cando_sp
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -230,7 +228,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intd_init: cando_nw set to always be ',def_cando_nw
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -240,7 +238,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intd_init: cando_txs set to always be ',def_cando_txs
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -250,7 +248,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intd_init: cando_hnd set to always be ',def_cando_hnd
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -259,8 +257,9 @@ c
         def_cando_sim  = status
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
-     &        ' intd_init: cando_sim set to always be ',def_cando_sim
-          call util_flush(6)
+     &        ' intd_init: cando_sim set to always be ',
+     S          def_cando_sim
+          call util_flush(luout)
         endif
       endif
 *
@@ -270,9 +269,10 @@ c
           def_cando_txs = .false.
           if (ga_nodeid().eq.0 .and. oprint) then
             write(luout,*)
-     &          ' intd_init: internal texas instability possible cando',
+     &          ' intd_init: internal texas instability',
+     &          ' possible cando',
      &          '_txs set to always be ',def_cando_txs
-            call util_flush(6)
+            call util_flush(luout)
           endif
         endif
       endif
@@ -288,11 +288,11 @@ c
           write(luout,*)' txs ', def_cando_txs
           write(luout,*)' hnd ', def_cando_hnd
           write(luout,*)' sim ', def_cando_sim
-          call util_flush(6)
+          call util_flush(luout)
         endif
-        call errquit
-     &      ('intd_init: logic error with user cando settings',911, 
-     &         INT_ERR)
+!        call errquit
+!     &      ('intd_init: logic error with user cando settings',911,
+!     &       INT_ERR)
       endif
       status = .true.
       do 00100 ibas=1,nbas
@@ -317,7 +317,7 @@ c
       ang2use = -1
       do 00300 ibas = 1,nbas
         if(.not.bas_high_angular(bases(ibas),angm))
-     &         call errquit('intd_init: angm error',angm, INT_ERR)
+     &      call errquit('intd_init: angm error',angm, INT_ERR)
         ang2use = max(ang2use,angm)
         if (dyall_mod_dir) then
           if(.not.bas_rel_high_ang(bases(ibas),angm))
@@ -380,8 +380,8 @@ c
       call sp_der_init(nbas,bases)
       call int_acc_std()
       if (.not.(user_cando_txs.and.(.not.def_cando_txs))) then
-         call texas_init(rtdb,nbas,bases,nqmax_texas,txs_mem_min,
-     &        'der1_int')
+        call texas_init(rtdb,nbas,bases,nqmax_texas,txs_mem_min,
+     &                  'der1_int')
       elseif (.not.(user_cando_nw.and.
      S       (.not.def_cando_nw))) then
 c     empty if clause to avoid the call to nwcsim_init
@@ -404,7 +404,7 @@ c
       if (any_ecp) then
         if (.not.ecp_check_handle(ecp_bsh,'intd_init')) call errquit
      &        ('intd_init: ecp handle is invalid fatal error',911,
-     &          INT_ERR)
+     &         INT_ERR)
       endif
 *
 c See if any basis has an attached SO potential
@@ -431,18 +431,18 @@ c See if any basis has an attached SO potential
       end
       subroutine sp_der_init(nbas,bases)
       implicit none
-#include "stdio.fh"
-#include "errquit.fh"
-#include "apispP.fh"
 #include "bas.fh"
+#include "errquit.fh"
+#include "stdio.fh"
+#include "apispP.fh"
 #include "mafdecls.fh"
 c
 c:: functions
       logical api_is_ecp_basis
       external api_is_ecp_basis
 c::passed
-      integer nbas
-      integer bases(nbas)
+      integer nbas             !< [Input] number of basis sets
+      integer bases(nbas)      !< [Input] basis set handles
 c::local
       integer ncont,icont,ibas
       integer mytype,nprim,ngen,sphorcart
@@ -474,5 +474,4 @@ c
      &       'derivative code yet'
       call errquit('sp_der_init',911, INT_ERR)
       end
-
 C> @}

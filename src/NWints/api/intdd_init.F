@@ -29,17 +29,17 @@ c
 c Initializes integral second derivative code 
 c
       implicit none
-#include "stdio.fh"
+#include "bas.fh"
 #include "errquit.fh"
+#include "apiP.fh"
+#include "candoP.fh"
 #include "global.fh"
 #include "mafdecls.fh"
-#include "bas.fh"
-#include "apiP.fh"
 #include "rtdb.fh"
-#include "candoP.fh"
 #include "nwc_const.fh"
 #include "int_nbf.fh"
 #include "util.fh"
+#include "stdio.fh"
 c::functions
       logical  spcart_init
       external spcart_init
@@ -54,13 +54,12 @@ c:tex-\begin{verbatim}
       integer bases(nbas) !< [Input] basis set handles
 c:tex-\end{verbatim}
 c::local
-      integer ibas, ang2use, angm
+      integer txs_mem_min ! memory from texas
+      integer ibas, ang2use, angm, type
       logical status, oprint
       integer intd_memtmp
       integer nqmax_texas  ! maximum number of quartets in texas blocking interface
       parameter (nqmax_texas = 10000)
-      integer txs_mem_min
-      integer type
       integer nbf2use, nbf2use_test, maxgdd
       logical cando_txs_deriv
 c
@@ -78,7 +77,7 @@ c
       if(init_intdd.eq.1 .and. oprint) then
         write(luout,*)' warning nested intdd_inits'
         write(luout,*)' intdd_init already called '
-        call util_flush(6)
+        call util_flush(luout)
       endif
 c
 c initialize type-> nbf maps
@@ -105,10 +104,12 @@ c
       user_cando_nw   = .false.
       user_cando_txs  = .false.
       user_cando_hnd  = .false.
+      user_cando_sim  = .false.
       def_cando_sp    = .false.
       def_cando_nw    = .false.
       def_cando_txs   = .false.
       def_cando_hnd   = .false.
+      def_cando_sim   = .false.
 c
       if (rtdb_get(rtdb,'int:cando_sp',MT_LOG,1,status)) then
         user_cando_sp = .true.
@@ -116,7 +117,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intdd_init: cando_sp set to always be ',def_cando_sp
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -126,7 +127,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intdd_init: cando_nw set to always be ',def_cando_nw
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -136,7 +137,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intdd_init: cando_txs set to always be ',def_cando_txs
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 c
@@ -146,7 +147,7 @@ c
         if (ga_nodeid().eq.0 .and. oprint) then
           write(luout,*)
      &        ' intdd_init: cando_hnd set to always be ',def_cando_hnd
-          call util_flush(6)
+          call util_flush(luout)
         endif
       endif
 *
@@ -159,7 +160,7 @@ c
      &          ' intdd_init: internal texas instability ',
      &          'possible cando',
      &          '_txs set to always be ',def_cando_txs
-            call util_flush(6)
+            call util_flush(luout)
           endif
         endif
       endif
@@ -174,11 +175,11 @@ c
           write(luout,*)' nw  ', def_cando_nw
           write(luout,*)' txs ', def_cando_txs
           write(luout,*)' hnd ', def_cando_hnd
-          call util_flush(6)
+          call util_flush(luout)
         endif
-        call errquit
-     &      ('intdd_init: logic error with user cando settings',911, 
-     &        INT_ERR)
+!        call errquit
+!     &      ('intdd_init: logic error with user cando settings',911,
+!     &       INT_ERR)
       endif
       status = .true.
       do 00100 ibas=1,nbas
@@ -240,7 +241,7 @@ c
       call sp_der_init(nbas,bases)
       call int_acc_std()
       if (.not.(user_cando_txs.and.(.not.def_cando_txs))) then
-         call texas_init(rtdb,nbas,bases,nqmax_texas,txs_mem_min,
+        call texas_init(rtdb,nbas,bases,nqmax_texas,txs_mem_min,
      &        'der2_int')
       endif
       call hnd_initdd(bases,nbas)
@@ -291,7 +292,7 @@ c See if any basis has an attached SO potential
       if (any_so) then
         if (.not.so_check_handle(so_bsh,'intdd_init')) call errquit
      &        ('intdd_init: so handle is invalid fatal error',911,
-     &         INT_ERR)
+     &          INT_ERR)
       endif
       if (any_so.or.any_ecp) then
         if (.not.int_ecp_init(ecp_bsh,so_bsh,2)) call errquit

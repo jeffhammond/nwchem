@@ -132,7 +132,7 @@ c form_type: 1. Free-particle projection operators
 c            2. External potential projection operators without pxVp integrals
 c            3. Complete spin-free Douglas-Kroll (i.e. including pxVp)
 c
-      if (.not. rtdb_get(rtdb,'doug_kroll',MT_LOG,1,doug_kroll)) 
+      if (.not. rtdb_get(rtdb,'doug_kroll',MT_LOG,1,doug_kroll))
      $    doug_kroll = .false.
       if (doug_kroll) then
 c
@@ -148,7 +148,7 @@ c
          if (.not. rtdb_get(rtdb,'doug_kroll:etratio',MT_DBL,1,
      $      dk_ratio)) dk_ratio = 2.0d0
 c
-c        Generate the fitting basis set and add it to the list of 
+c        Generate the fitting basis set and add it to the list of
 c        used basis sets
 c
          do 00400 ibas = 1, nbas
@@ -156,7 +156,7 @@ c
      $         call errquit('int_init: failed in bas_name',0, INT_ERR)
             if (dk_bas_name(1:8) .eq. 'ao basis') goto 00004
 00400    continue
-         call errquit('int_init: could not find ao basis',0, INT_ERR)
+         call errquit('int_init: could not find ao basis',0, BASIS_ERR)
 00004    call bas_create_uncont(rtdb,bases(ibas),'auto D-K basis',
      $      dk_fitbas)
 c
@@ -207,7 +207,7 @@ c     rel_init_con initializes some relativistic constants
 
       call int_init_org(rtdb, nrbas, int_mb(mybIm_a))
       if (.not. ma_pop_stack(mybm_a))
-     $     call errquit('int_init: ma_pop_stack mybm_a',0, INT_ERR)
+     $     call errquit('int_init: ma_pop_stack mybm_a',0, MA_ERR)
 c
       end
 c
@@ -256,7 +256,6 @@ c::local
       logical status, oprint
       integer nqmax_texas  ! maximum number of quartets in texas blocking interface
       parameter (nqmax_texas = 10000)
-
 c
 c     print info/warnings unless print set to none. errors always print.
 c
@@ -301,10 +300,12 @@ c
       user_cando_nw   = .false.
       user_cando_txs  = .false.
       user_cando_hnd  = .false.
+      user_cando_sim  = .false.
       def_cando_sp    = .false.
       def_cando_nw    = .false.
       def_cando_txs   = .false.
       def_cando_hnd   = .false.
+      def_cando_sim   = .false.
 c
       if (rtdb_get(rtdb,'int:cando_sp',MT_LOG,1,status)) then
         user_cando_sp = .true.
@@ -363,8 +364,9 @@ c
           def_cando_txs = .false.
           if (ga_nodeid().eq.0 .and. oprint) then
             write(luout,*)
-     &          ' int_init: internal texas instability possible cando_',
-     &          'txs set to always be ',def_cando_txs
+     &          ' int_init: internal texas instability',
+     &          'possible cando',
+     &          '_txs set to always be ',def_cando_txs
             call util_flush(luout)
           endif
         endif
@@ -383,16 +385,14 @@ c
           write(luout,*)' sim ', def_cando_sim
           call util_flush(luout)
         endif
-        call errquit
-     &      ('int_init: logic error with user cando settings',911,
-     &       INT_ERR)
+!        call errquit
+!     &      ('int_init: logic error with user cando settings',911,
+!     &       INT_ERR)
       endif
-c
       status = .true.
       do 00100 ibas=1,nbas
         status = status .and. bas_check_handle(bases(ibas),'int_init')
 00100 continue
-
       if (.not.status) then
         write(luout,*)' at least one basis handle not valid'
         do 00200 ibas = 1,nbas
@@ -444,6 +444,8 @@ c
           def_cando_sp   = .false.
           user_cando_txs = .true.
           def_cando_txs  = .false.
+          user_cando_sim = .true.
+          def_cando_sim  = .false.
           if (ga_nodeid().eq.0 .and. oprint) then
             write(luout,*) ' int_init: cando_sp and cando_txs',
      &          ' turned off for NESC2E'
@@ -463,7 +465,7 @@ c
 * no txs u=t d=f -> t.and.!f -> t -> e = f
       if (.not.(user_cando_txs.and.(.not.def_cando_txs))) then
         call texas_init(rtdb,nbas,bases,nqmax_texas,txs_mem_min,
-     *                  'scfd_int')
+     &                  'scfd_int')
       elseif (.not.(user_cando_nw.and.
      S       (.not.def_cando_nw))) then
          call igamma_init
@@ -585,7 +587,5 @@ c
       common /int_rtdb/irtdb
 
       int_get_rtdb = irtdb
-c   
-      return
       end
 C> @}
