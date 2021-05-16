@@ -93,6 +93,9 @@
             kv(1) =  brillioun_k(1,nb)
             kv(2) =  brillioun_k(2,nb)
             kv(3) =  brillioun_k(3,nb)
+            !kv(1) =  0.0d0
+            !kv(2) =  0.0d0
+            !kv(3) =  0.0d0
          end if
          call cloak_set(kv,ecut)
 
@@ -528,11 +531,13 @@
       if (control_balance())
      >  call c_Balance_c_unbalance_end(nb,tmp1,request,reqcnt)
 
-      call dcopy(2*(nidb),tmp1,1,tmp2,1)
-      call dcopy(2*nfft3d,0.0d0,0,tmp1,1)
+      call Parallel_shared_vector_copy(.false.,2*(nidb),tmp1,tmp2)
+      call Parallel_shared_vector_zero(.true.,2*nfft3d,tmp1)
+!$OMP DO
       do i=1,(nidb)
         tmp1(int_mb(pack+i-1)) = tmp2(i)
       end do
+!$OMP END DO
 
       call nwpw_timing_end(9)
 
@@ -1091,7 +1096,7 @@ c     if (np.gt.1) call C3dB_SumAll(sum)
 
 *     ***********************************
 *     *                                 *
-*     *          Cram_ccm_idgemm         *
+*     *         Cram_ccm_idgemm         *
 *     *                                 *
 *     ***********************************
 
@@ -1114,7 +1119,7 @@ c     if (np.gt.1) call C3dB_SumAll(sum)
       call Parallel3d_np_i(np)
       npack1 = int_mb(nidb2_list(1)+nb)
 
-      call DGEMM('T','N',n,m,2*npack1,
+      call DGEMM_OMP('T','N',n,m,2*npack1,
      >           alpha,
      >           A, 2*npack_max,
      >           B, 2*npack_max,
@@ -1152,7 +1157,7 @@ c     if (np.gt.1) call C3dB_SumAll(sum)
       call nwpw_timing_start(2)
       npack1 = int_mb(nidb2_list(1)+nb)
 
-      call ZGEMM('C','N',n,m,npack1,
+      call ZGEMM_OMP('C','N',n,m,npack1,
      >           alpha,
      >           A, npack_max,
      >           B, npack_max,
@@ -1190,7 +1195,7 @@ c     if (np.gt.1) call C3dB_SumAll(sum)
       npack1 = int_mb(nidb2_list(1)+nb)
 
       do k=1,n
-        call ZGEMM('C','N',k,1,npack1,
+        call ZGEMM_OMP('C','N',k,1,npack1,
      >           alpha,
      >           A, npack_max,
      >           B(1+(k-1)*npack_max), npack_max,
@@ -1245,7 +1250,7 @@ c      end do
       call Parallel3d_np_i(np)
       npack1 = int_mb(nidb2_list(1)+nb)
 
-      call ZGEMM('N','N',npack1,n,m,
+      call ZGEMM_OMP('N','N',npack1,n,m,
      >           alpha,
      >           A, npack_max,
      >           hml,n,
@@ -1378,7 +1383,8 @@ c      end do
 #include "bafdecls.fh"
 #include "cram_common.fh"
 
-      call dcopy(2*(int_mb(nidb2_list(1)+nb)),A,1,B,1)
+      call Parallel_shared_vector_copy(.true.,
+     >                                 2*(int_mb(nidb2_list(1)+nb)),A,B)
 
       return
       end
@@ -1398,10 +1404,62 @@ c      end do
 #include "bafdecls.fh"
 #include "cram_common.fh"
 
-      call dcopy((int_mb(nidb2_list(1)+nb)),A,1,B,1)
+      call Parallel_shared_vector_copy(.true.,
+     >                                 (int_mb(nidb2_list(1)+nb)),A,B)
 
       return
       end
+
+*     ***********************************
+*     *					*
+*     *	         Cram_rc_Copy		*	
+*     *					*
+*     ***********************************
+
+      subroutine Cram_rc_Copy(nb,A,B)
+      implicit none
+      integer nb
+      real*8     A(*)
+      complex*16 B(*)
+
+#include "bafdecls.fh"
+#include "cram_common.fh"
+
+      integer i
+
+!$OMP DO
+      do i=1,(int_mb(nidb2_list(1)+nb))
+         B(i) = dcmplx(A(i),0.0d0)
+      end do
+!$OMP END DO
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *          Cram_cr_Copy           *       
+*     *                                 *
+*     ***********************************
+
+      subroutine Cram_cr_Copy(nb,A,B)
+      implicit none
+      integer nb
+      complex*16 A(*)
+      real*8     B(*)
+
+#include "bafdecls.fh"
+#include "cram_common.fh"
+
+      integer i
+
+!$OMP DO
+      do i=1,(int_mb(nidb2_list(1)+nb))
+         B(i) = dble(A(i))
+      end do
+!$OMP END DO
+      return
+      end
+
 
 *     ***********************************
 *     *					*
@@ -1417,7 +1475,37 @@ c      end do
 #include "bafdecls.fh"
 #include "cram_common.fh"
 
-      call dcopy(2*(int_mb(nidb2_list(1)+nb)),0.0d0,0,A,1)
+      call Parallel_shared_vector_zero(.true.,
+     >                                 2*(int_mb(nidb2_list(1)+nb)),A)
+
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *          Cram_c_setzero         *
+*     *                                 *
+*     ***********************************
+     
+      subroutine Cram_c_setzero(nb,vzero,A)
+      implicit none  
+      integer    nb
+      real*8     vzero
+      complex*16 A(*)
+          
+#include "bafdecls.fh"
+#include "cram_common.fh"
+      
+*     **** local variables ****
+      integer indx,p,q,taskid,id
+      
+      id = 1
+     
+      call Parallel3d_taskid_i(taskid)
+!$OMP MASTER
+      call C3dB_ijktoindexp(id,1,1,1,indx,p)
+      if (p.eq.taskid) A(indx) = dcmplx(vzero,0.0d0)
+!$OMP END MASTER
 
       return
       end
@@ -1443,9 +1531,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) + B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1469,9 +1559,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         B(i) = B(i) + A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1496,9 +1588,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) + B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1523,9 +1617,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         B(i) = B(i) + A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1550,9 +1646,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) - B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1576,9 +1674,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) - B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1601,9 +1701,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = dsqrt(A(i))
       end do
+!$OMP END DO
 
       return
       end
@@ -1626,9 +1728,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         A(i) = dsqrt(A(i))
       end do
+!$OMP END DO
 
       return
       end
@@ -1653,9 +1757,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = dble(A(i))**2 + dimag(A(i))**2
       end do
+!$OMP END DO
 
       return
       end
@@ -1681,9 +1787,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1708,9 +1816,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         A(i) = alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1736,9 +1846,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1766,9 +1878,11 @@ c      end do
 
       nn = int_mb(nidb2_list(1)+nb)
 
+!$OMP DO
       do i=1,nn
         C(i) = alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1792,9 +1906,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         A(i) = alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1817,7 +1933,7 @@ c      end do
 #include "bafdecls.fh"
 #include "cram_common.fh"
 
-      call daxpy(2*(int_mb(nidb2_list(1)+nb)),alpha,A,1,B,1)
+      call DAXPY_OMP(2*(int_mb(nidb2_list(1)+nb)),alpha,A,1,B,1)
 
       return
       end
@@ -1843,9 +1959,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = C(i) + alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1871,9 +1989,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = C(i) + alpha*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1898,9 +2018,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,( int_mb(nidb2_list(1)+nb))
         C(i) = A(i)*B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1924,9 +2046,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,( int_mb(nidb2_list(1)+nb))
         B(i) = B(i)*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -1950,9 +2074,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) * dcmplx(-dimag(B(i)),dble(B(i)))
       end do
+!$OMP END DO
 
       return
       end
@@ -1977,9 +2103,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i) * dcmplx(-dimag(B(i)),dble(B(i)))
       end do
+!$OMP END DO
 
       return
       end
@@ -2005,9 +2133,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i)*B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2031,9 +2161,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         B(i) = B(i)*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2057,9 +2189,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,( int_mb(nidb2_list(1)+nb))
         C(i) = dble(dconjg(A(i))*B(i))
       end do
+!$OMP END DO
 
       return
       end
@@ -2084,9 +2218,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = dconjg(A(i))*B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2113,9 +2249,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = dcmplx(0.0d0,A(i)) * B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2141,9 +2279,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = A(i)*B(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2166,9 +2306,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         B(i) = B(i)*A(i)
       end do
+!$OMP END DO
 
       return
       end
@@ -2198,9 +2340,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = dimag(alpha*A(i)*dconjg(B(i)))
       end do
+!$OMP END DO
 
       return
       end
@@ -2228,9 +2372,11 @@ c      end do
 *     **** local variables ****
       integer i
 
+!$OMP DO
       do i=1,(int_mb(nidb2_list(1)+nb))
         C(i) = C(i)+dimag(alpha*A(i)*dconjg(B(i)))
       end do
+!$OMP END DO
 
       return
       end

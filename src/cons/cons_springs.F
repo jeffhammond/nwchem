@@ -428,7 +428,7 @@ c
         write(luout,'(A,F18.9)') 
      >  "   - spring energy                :",enb
         write(luout,'(A,F18.9)') 
-     >  "   - unconstrained energy         :",energy
+     >  "   - previous/base energy         :",energy
         write(luout,'(A,F18.9)') 
      >  "   - constrained energy           :",energy+enb
         write(luout,*) "  - coefficient index1 index2"
@@ -507,7 +507,7 @@ c
         write(luout,'(A,F18.9)')
      >  "   - spring energy                :",enb
         write(luout,'(A,F18.9)')
-     >  "   - unconstrained energy         :",energy
+     >  "   - previous/base energy         :",energy
         write(luout,'(A,F18.9)')
      >  "   - constrained energy           :",energy+enb
         write(luout,*) "  - coefficient index1 index2"
@@ -527,6 +527,395 @@ c
       call util_print_pop()
       return
       end
+
+
+
+      subroutine cons_unload_pbondings()
+      implicit none
+#include "errquit.fh"
+#include "mafdecls.fh"
+#include "cons.fh"
+      integer nhp
+      integer h_pbondings_n0
+      integer h_pbondings_indx
+      integer h_pbondings_coef
+      integer h_pbondings_k0
+      integer h_pbondings_gcut0
+      integer h_pbondings_gamma0
+      integer h_pbondings_c0
+
+      h_pbondings_n0     = cons_get_h_pbondings_n0()
+      h_pbondings_indx   = cons_get_h_pbondings_indx()
+      h_pbondings_coef   = cons_get_h_pbondings_coef()
+      h_pbondings_k0     = cons_get_h_pbondings_k0()
+      h_pbondings_gcut0  = cons_get_h_pbondings_gcut0()
+      h_pbondings_gamma0 = cons_get_h_pbondings_gamma0()
+      h_pbondings_c0     = cons_get_h_pbondings_c0()
+c
+c     unload harmonic constraints if any
+c
+      call cons_get_pbondings_nhp(nhp)
+      if(nhp.gt.0) then
+      if (.not. ma_free_heap(h_pbondings_n0) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_n0',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_indx) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_indx',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_coef) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_coef',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_k0) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_k0',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_gcut0) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_gcut0',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_gamma0) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_gamma0',
+     &    0, MA_ERR)
+      if (.not. ma_free_heap(h_pbondings_c0) ) call errquit(
+     &    'cons_bonding_input: unable to free h_pbondings_c0',
+     &    0, MA_ERR)
+      call cons_set_pbondings_nhp(0)
+      end if
+      end
+
+c     
+      subroutine cons_load_pbondings(namespace,rtdb)
+      implicit none
+#include "errquit.fh"
+#include "mafdecls.fh"
+#include "rtdb.fh"
+#include "util.fh"
+#include "geom.fh"
+c     
+      character*(*) namespace
+      integer rtdb
+c
+      logical status
+      integer nhp
+      integer h_pbondings_n0,i_pbondings_n0
+      integer h_pbondings_indx,i_pbondings_indx
+      integer h_pbondings_coef,i_pbondings_coef
+      integer h_pbondings_k0,i_pbondings_k0
+      integer h_pbondings_gcut0,i_pbondings_gcut0
+      integer h_pbondings_gamma0,i_pbondings_gamma0
+      integer h_pbondings_c0,i_pbondings_c0
+      character*255 tag_n
+      character*255 tag_n0
+      character*255 tag_indx
+      character*255 tag_coef
+      character*255 tag_k0
+      character*255 tag_gcut0
+      character*255 tag_gamma0
+      character*255 tag_c0
+      integer ma_type,ma_n
+c
+      call cons_unload_pbondings()
+c
+      call cons_pbondings_n_tag(namespace,tag_n)
+
+      call cons_pbondings_n0_tag(namespace,tag_n0)
+      call cons_pbondings_indx_tag(namespace,tag_indx)
+      call cons_pbondings_coef_tag(namespace,tag_coef)
+      call cons_pbondings_k0_tag(namespace,tag_k0)
+      call cons_pbondings_gcut0_tag(namespace,tag_gcut0)
+      call cons_pbondings_gamma0_tag(namespace,tag_gamma0)
+      call cons_pbondings_c0_tag(namespace,tag_c0)
+c
+c     load harmonic constraints
+c
+      status=rtdb_get(rtdb,tag_n,mt_int,1,nhp)
+c     
+c     exit if no harm bonds
+      if(.not.status .or. nhp.eq.0) then
+c            call errquit(
+c     >     'cons_load_hbonds: unable to get number of harm bonds:',
+c     >      nhb, MA_ERR)
+      return
+      end if
+
+      if ( .not. rtdb_ma_get( rtdb, tag_n0,ma_type, ma_n,
+     &      h_pbondings_n0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_n0,
+     &      i_pbondings_n0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_indx,ma_type, ma_n,
+     &      h_pbondings_indx) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_indx,
+     &      i_pbondings_indx) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_coef,ma_type, ma_n,
+     &      h_pbondings_coef) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_coef,
+     &      i_pbondings_coef) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_k0,ma_type, ma_n,
+     &      h_pbondings_k0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_k0,
+     &      i_pbondings_k0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_gcut0,ma_type, ma_n,
+     &      h_pbondings_gcut0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_gcut0,
+     &      i_pbondings_gcut0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_gamma0,ma_type, ma_n,
+     &      h_pbondings_gamma0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_gamma0,
+     &      i_pbondings_gamma0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+      if ( .not. rtdb_ma_get( rtdb, tag_c0,ma_type, ma_n,
+     &      h_pbondings_c0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+      if ( .not. ma_get_index(h_pbondings_c0,
+     &      i_pbondings_c0) ) call errquit(
+     &      'cons_load_hbonds: unable to allocate cons scratch space',
+     &      2*nhp, MA_ERR)
+
+       call cons_set_pbondings_nhp(nhp)
+       call cons_set_pbondings_n0(h_pbondings_n0)
+       call cons_set_pbondings_indx(h_pbondings_indx)
+       call cons_set_pbondings_coef(h_pbondings_coef)
+       call cons_set_pbondings_k0(h_pbondings_k0)
+       call cons_set_pbondings_gcut0(h_pbondings_gcut0)
+       call cons_set_pbondings_gamma0(h_pbondings_gamma0)
+       call cons_set_pbondings_c0(h_pbondings_c0)
+
+      return
+      end
+
+c
+      subroutine cons_delete_pbondings(namespace,rtdb)
+      implicit none
+#include "errquit.fh"
+#include "rtdb.fh"
+c     
+      character*(*) namespace
+      integer rtdb
+c
+      logical status
+      character*255 tag_n
+      character*255 tag_n0
+      character*255 tag_indx
+      character*255 tag_coef
+      character*255 tag_k0
+      character*255 tag_gcut0
+      character*255 tag_gamma0
+      character*255 tag_c0
+
+      call cons_pbondings_n_tag(namespace,tag_n)
+      call cons_pbondings_n0_tag(namespace,tag_n0)
+      call cons_pbondings_indx_tag(namespace,tag_indx)
+      call cons_pbondings_coef_tag(namespace,tag_coef)
+      call cons_pbondings_k0_tag(namespace,tag_k0)
+      call cons_pbondings_gcut0_tag(namespace,tag_gcut0)
+      call cons_pbondings_gamma0_tag(namespace,tag_gamma0)
+      call cons_pbondings_c0_tag(namespace,tag_c0)
+
+      status =              rtdb_delete(rtdb,tag_n)
+      status = status .and. rtdb_delete(rtdb,tag_n0)
+      status = status .and. rtdb_delete(rtdb,tag_indx)
+      status = status .and. rtdb_delete(rtdb,tag_coef)
+      status = status .and. rtdb_delete(rtdb,tag_k0)
+      status = status .and. rtdb_delete(rtdb,tag_gcut0)
+      status = status .and. rtdb_delete(rtdb,tag_gamma0)
+      status = status .and. rtdb_delete(rtdb,tag_c0)
+
+      end
+
+
+c
+      subroutine cons_add_pbondings_energy(rtdb,energy)
+      implicit none
+#include "errquit.fh"
+#include "global.fh"
+#include "mafdecls.fh"
+#include "rtdb.fh"
+#include "util.fh"
+#include "stdio.fh"
+#include "cons.fh"
+c     
+      integer rtdb
+      double precision energy
+      logical oprint
+      integer i,ii,n,j
+      double precision K0,gcut0,gamma0,c0,gamm
+      double precision e,enb
+      integer i_c,i_n,i_indx,i_coef,i_k0,i_gcut0,i_gamma0,i_c0
+      integer nhp
+
+c
+      call util_print_push()
+      call util_print_rtdb_load(rtdb,'cons')
+      oprint = util_print('energy', print_default)
+      oprint =oprint .and. (ga_nodeid().eq.0)
+c
+      call cons_get_pbondings_nhp(nhp)
+      i_c      = cons_get_i_c()
+      i_n      = cons_get_i_pbondings_n0()
+      i_indx   = cons_get_i_pbondings_indx()
+      i_coef   = cons_get_i_pbondings_coef()
+      i_k0     = cons_get_i_pbondings_k0()
+      i_gcut0  = cons_get_i_pbondings_gcut0()
+      i_gamma0 = cons_get_i_pbondings_gamma0()
+      i_c0     = cons_get_i_pbondings_c0()
+
+      e=0.0d0
+      ii = 0
+      do i=1,nhp
+         n      = int_mb(i_n+i-1)
+         K0     = dbl_mb(i_k0+i-1)
+         gcut0  = dbl_mb(i_gcut0+i-1)
+         gamma0 = dbl_mb(i_gamma0+i-1)
+         c0     = dbl_mb(i_c0+i-1)
+
+         call cons_pbondings_energy(n,int_mb(i_indx+2*ii),
+     >                          dbl_mb(i_coef+ii),
+     >                          K0,gcut0,gamma0,c0,dbl_mb(i_c),gamm,enb)
+       if(oprint) then
+        write(luout,*)
+        write(luout,'(A,I4)') "Adding bondings spring # ",i
+        write(luout,'(A,F18.9,F18.9,E14.6,F18.9)') 
+     >             "   - spring parameters (K0,gcut0,gamma0,c0):",
+     >             K0,gcut0,gamma0,c0
+        write(luout,'(A,E18.6)') 
+     >  "   - gamma                        :",gamm
+        write(luout,'(A,F18.9)') 
+     >  "   - spring energy                :",enb
+        write(luout,'(A,F18.9)') 
+     >  "   - previous/base energy         :",energy
+        write(luout,'(A,F18.9)') 
+     >  "   - constrained energy           :",energy+enb
+        write(luout,*) "  - coefficient index1 index2"
+        do j=1,n
+           write(luout,'(F16.6,I7,I7)') dbl_mb(i_coef+ii+j-1),
+     >                           int_mb(i_indx+2*ii+2*(j-1)),
+     >                           int_mb(i_indx+2*ii+2*(j-1)+1)
+        end do
+        write(luout,*)
+       end if
+       ii = ii + n
+       e=e+enb
+      end do
+      energy = energy + e
+c
+      call util_print_pop()
+      return
+      end
+
+
+c     
+      subroutine cons_add_pbondings_egrad(rtdb,energy,gx)
+      implicit none
+#include "errquit.fh"
+#include "mafdecls.fh"
+#include "global.fh"
+#include "rtdb.fh"
+#include "util.fh"
+#include "stdio.fh"
+#include "cons.fh"
+c     
+      integer rtdb
+      double precision gx(*)
+      double precision energy
+c     local variables
+c     ---------------
+      logical oprint
+      integer i,j,n,ii
+      integer nhp
+      double precision gamma0,K0,gcut0,c0,gamm
+      double precision e,enb
+      integer i_c,i_n,i_indx,i_coef,i_k0,i_gcut0,i_gamma0,i_c0
+c
+      call util_print_push()
+      call util_print_rtdb_load(rtdb,'cons')
+      oprint = util_print('energy', print_default)
+      oprint =oprint .and. (ga_nodeid().eq.0)
+c
+      call cons_get_pbondings_nhp(nhp)
+      i_c      = cons_get_i_c()
+      i_n      = cons_get_i_pbondings_n0()
+      i_indx   = cons_get_i_pbondings_indx()
+      i_coef   = cons_get_i_pbondings_coef()
+      i_k0     = cons_get_i_pbondings_k0()
+      i_gcut0  = cons_get_i_pbondings_gcut0()
+      i_gamma0 = cons_get_i_pbondings_gamma0()
+      i_c0     = cons_get_i_pbondings_c0()
+
+
+      e=0.0d0
+      ii = 0
+      do i=1,nhp
+         n      = int_mb(i_n+i-1)
+         K0     = dbl_mb(i_k0+i-1)
+         gcut0  = dbl_mb(i_gcut0+i-1)
+         gamma0 = dbl_mb(i_gamma0+i-1)
+         c0     = dbl_mb(i_c0+i-1)
+
+         call cons_pbondings_force(n,int_mb(i_indx+2*ii),
+     >                       dbl_mb(i_coef+ii),
+     >                       K0,gcut0,gamma0,c0,dbl_mb(i_c),gamm,enb,gx)
+       if(oprint) then
+        write(luout,*)
+        write(luout,'(A,I4)') "Adding bondings penalty # ",i
+        write(luout,'(A,F18.9,F18.9,E14.6,F18.9)')
+     >             "   - spring parameters (K0,gcut0,gamma0,c0):",
+     >             K0,gcut0,gamma0,c0
+        write(luout,'(A,E18.6)')
+     >  "   - gamma                        :",gamm
+        write(luout,'(A,F18.9)')
+     >  "   - penalty energy               :",enb
+        write(luout,'(A,F18.9)')
+     >  "   - previous/base energy         :",energy
+        write(luout,'(A,F18.9)')
+     >  "   - penalized energy             :",energy+enb
+        write(luout,*) "  - coefficient index1 index2"
+        do j=1,n
+           write(luout,'(F16.6,I7,I7)') dbl_mb(i_coef+ii+j-1),
+     >                           int_mb(i_indx+2*ii+2*(j-1)),
+     >                           int_mb(i_indx+2*ii+2*(j-1)+1)
+        end do
+        write(luout,*)
+       end if
+
+       ii = ii + n
+       e=e+enb
+      end do
+      energy = energy + e
+c
+      call util_print_pop()
+      return
+      end
+
+
+
 
 
 
@@ -791,22 +1180,22 @@ c
       double precision k,r0
       double precision r1(3)
       double precision r2(3)
-      double precision r
+      double precision r,x,y,z
       double precision energy
       double precision f(3)
 c
       integer i
 c
-       r=(r1(1)-r2(1))**2+
-     >   (r1(2)-r2(2))**2+
-     >   (r1(3)-r2(3))**2
-       r=sqrt(r)
-       energy=k*(r-r0)**2
+      x = r1(1) - r2(1)
+      y = r1(2) - r2(2)
+      z = r1(3) - r2(3)
+      call cons_lattice_min_diff(x,y,z)
+      r=sqrt(x*x + y*y + z*z)
+      energy=k*(r-r0)**2
 
-       do i=1,3
-         f(i)=2*k*(r-r0)*
-     &     (r1(i)-r2(i))/r
-       end do
+      f(1)=2*k*(r-r0)*(x/r)
+      f(2)=2*k*(r-r0)*(y/r)
+      f(3)=2*k*(r-r0)*(z/r)
 
       return
       end
@@ -822,16 +1211,17 @@ c
       double precision k,r0
       double precision r1(3)
       double precision r2(3)
-      double precision r
+      double precision r,x,y,z
       double precision energy
 c
       integer i
 c
-       r=(r1(1)-r2(1))**2+
-     >   (r1(2)-r2(2))**2+
-     >   (r1(3)-r2(3))**2
-       r=sqrt(r)
-       energy=k*(r-r0)**2
+      x =  r1(1) - r2(1) 
+      y =  r1(2) - r2(2) 
+      z =  r1(3) - r2(3) 
+      call cons_lattice_min_diff(x,y,z)
+      r=sqrt(x*x + y*y + z*z)
+      energy=k*(r-r0)**2
       return
       end
 
@@ -860,6 +1250,7 @@ c
          x = rion(1,i0) - rion(1,i1)
          y = rion(2,i0) - rion(2,i1)
          z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
          dist = dsqrt(x*x + y*y + z*z)
          gamm = gamm +  coef(i)*dist
       end do
@@ -892,6 +1283,7 @@ c
          x = rion(1,i0) - rion(1,i1)
          y = rion(2,i0) - rion(2,i1)
          z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
          dist = dsqrt(x*x + y*y + z*z)
          gamm = gamm +  coef(i)*dist
       end do
@@ -904,6 +1296,7 @@ c
          x = rion(1,i0) - rion(1,i1)
          y = rion(2,i0) - rion(2,i1)
          z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
          dist = dsqrt(x*x + y*y + z*z)
          f(1,i0) = f(1,i0) + denergy*coef(i)*(x/dist)
          f(2,i0) = f(2,i0) + denergy*coef(i)*(y/dist)
@@ -915,6 +1308,96 @@ c
 
       return
       end
+
+
+
+      subroutine cons_pbondings_energy(n,indx,coef,K0,gcut0,gamma0,c0,
+     >                                 rion,gamm,energy)
+      implicit none
+#include "errquit.fh"
+#include "mafdecls.fh"
+#include "rtdb.fh"
+#include "util.fh"
+#include "cons_data.fh"
+c     
+      integer n,indx(*)
+      double precision coef(*),K0,gcut0,gamma0,c0
+      double precision rion(3,*)
+      double precision gamm,energy
+c
+      integer i,i0,i1
+      double precision x,y,z,dist
+c
+      gamm = 0.0d0
+      do i=1,n
+         i0 = indx(2*i-1)
+         i1 = indx(2*i) 
+         x = rion(1,i0) - rion(1,i1)
+         y = rion(2,i0) - rion(2,i1)
+         z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
+         dist = dsqrt(x*x + y*y + z*z)
+         gamm = gamm +  coef(i)*dist
+      end do
+      energy = K0*exp(-((gamm-gamma0)/gcut0)**c0)
+
+      return
+      end
+
+
+
+      subroutine cons_pbondings_force(n,indx,coef,K0,gcut0,gamma0,c0,
+     >                                rion,gamm,energy,f)
+      implicit none
+#include "errquit.fh"
+#include "mafdecls.fh"
+#include "rtdb.fh"
+#include "util.fh"
+#include "cons_data.fh"
+c     
+      integer n,indx(*)
+      double precision coef(*),K0,gcut0,gamma0,c0
+      double precision rion(3,*)
+      double precision gamm,energy,f(3,*)
+c
+      integer i,ii,i0,i1
+      double precision x,y,z,dist,denergy
+c
+      gamm = 0.0d0
+      do i=1,n
+         i0 = indx(2*i-1)
+         i1 = indx(2*i)
+         x = rion(1,i0) - rion(1,i1)
+         y = rion(2,i0) - rion(2,i1)
+         z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
+         dist = dsqrt(x*x + y*y + z*z)
+         gamm = gamm +  coef(i)*dist
+      end do
+      energy  = K0*exp(-((gamm-gamma0)/gcut0)**c0)
+      denergy = -(c0*energy*(gamm-gamma0)**(c0-1.0d0)) / (gcut0**c0)
+
+      do i=1,n
+         i0 = indx(2*i-1)
+         i1 = indx(2*i)
+         x = rion(1,i0) - rion(1,i1)
+         y = rion(2,i0) - rion(2,i1)
+         z = rion(3,i0) - rion(3,i1)
+         call cons_lattice_min_diff(x,y,z)
+         dist = dsqrt(x*x + y*y + z*z)
+         f(1,i0) = f(1,i0) + denergy*coef(i)*(x/dist)
+         f(2,i0) = f(2,i0) + denergy*coef(i)*(y/dist)
+         f(3,i0) = f(3,i0) + denergy*coef(i)*(z/dist)
+         f(1,i1) = f(1,i1) - denergy*coef(i)*(x/dist)
+         f(2,i1) = f(2,i1) - denergy*coef(i)*(y/dist)
+         f(3,i1) = f(3,i1) - denergy*coef(i)*(z/dist)
+      end do
+
+      return
+      end
+
+
+
 
 
 

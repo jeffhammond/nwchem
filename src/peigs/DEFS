@@ -560,7 +560,7 @@ ifeq ($(FC),pgf90)
 	peigs_FC  +=  -Kieee
 	endif
 	endif
-ifeq ($(_CPU),$(findstring $(_CPU), ppc64 ppc64le))
+ifeq ($(_CPU),$(findstring $(_CPU), powerpc64 ppc64 ppc64le))
 #ppc64 with /tcgmsg
 	peigs_CPU = RS6000
 ifeq ($(FC),xlf)
@@ -583,6 +583,9 @@ ifeq ($(FC),xlf)
     endif
   endif
 
+  ifndef peigs_CPU
+        peigs_CPU  = PENTIUM
+  endif
 endif#end of LINUX64
 
 ifeq ($(peigs_TARGET),cray-sv2)

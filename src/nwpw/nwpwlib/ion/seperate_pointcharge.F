@@ -41,7 +41,13 @@
       value = value.and.beom_create(geom2,'pspwgeometry')
       value = value.and.beom_create(geom3,'chargegeometry')
       value = value.and.beom_rtdb_load(rtdb,geom1,'geometry')
+      value = value.and.beom_rtdb_load(rtdb,geom2,'geometry')
       value = value.and.beom_ncent(geom1,nion1)
+
+      !value = value.and.beom_rtdb_store(rtdb,geom1,'pspwgeometry')
+      !value = value.and.beom_load(geom2,'pspwgeometry')
+
+
       if (.not. value) call errquit('opening geometry',0,
      &       GEOM_ERR)
 
@@ -195,7 +201,7 @@
      >   call errquit('pspwgeometry->geometry write 1',0, GEOM_ERR)
 
         value = BA_push_get(mt_dbl,(3*nion1),'rt',rt(2),rt(1))
-        if (.not. value) call errquit('out of stack memory',0, MA_ERR)
+        if (.not.value) call errquit('out of stack memory',0, MA_ERR)
 
         do i=1,nion2
            value = value.and.beom_cent_get(geom2,i,t,rxyz,q)
@@ -207,7 +213,7 @@
         end do
         value = value.and.beom_vel_get(geom2,dbl_mb(rt(1)))
         if (nion3.gt.0)
-     >     value = value.and.beom_vel_get(geom3,dbl_mb(rt(1+3*nion2)))
+     >     value = value.and.beom_vel_get(geom3,dbl_mb(rt(1)+3*nion2))
         value = value.and.beom_vel_set(geom1, dbl_mb(rt(1)))
 
         value = value.and.beom_rtdb_delete(rtdb,'geometry')
@@ -223,7 +229,7 @@
         value = value.and.BA_pop_stack(rt(2))
         if (.not. value)
      >   call errquit('pspwgeometry->geometry write 2',0,
-     &       GEOM_ERR)
+     >       GEOM_ERR)
 
       return
       end

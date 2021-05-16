@@ -576,6 +576,7 @@ c
       CHARACTER*8 GUESS
       CHARACTER*8 GUESS1
       CHARACTER*8 GUESS2
+      double precision C
       COMMON/HND_IOFILE/IR,IW
       COMMON/HND_MOLNUC/NUC(MXATOM)
       COMMON/HND_ZMTPAR/NZMAT,NZVAR,NVAR
@@ -1134,6 +1135,8 @@ c
       if (.not.rtdb_get(rtdb,'driver:diagonal_hessian',
      $                   mt_log,1,diagonal_hessian))
      $   diagonal_hessian = .false.
+      if (.not. rtdb_get(rtdb,'driver:ofast_diag',mt_log,1,ofast_diag))
+     $     ofast_diag = .false.
       
 c
 c     Force sensible options
@@ -1421,6 +1424,8 @@ c
       integer istrss
       double precision strss1,strss2,dum1,dum2,dum3,dum4
       logical redo_hessian
+      double precision ddot
+      external ddot
 
 ! This is a statement function
       ind(i,j) = k_hess + i + (j-1)*nvar - 1
@@ -1626,8 +1631,9 @@ c
 c     Only alpha and ds() are modified.
 c
       integer i, iat,j, top
-*     integer info
+      integer info
       integer l_hess, k_hess, l_work, k_work, lenwork
+      integer l_iwork,k_iwork,leniwork
       double precision  e(max_nvar) ! Hessian eigenvalues
       double precision pg(max_nvar) ! P.g
       double precision gv(max_nvar) ! Gradient along eigenvectors
@@ -1647,6 +1653,8 @@ c
       logical ophigh
       logical geom_lattice_get
       external geom_lattice_get
+      double precision ddot
+      external ddot
 c
       ophigh = util_print('high', print_high)
 c     
@@ -1690,18 +1698,29 @@ c
 c     To cause degenerate eigenvalues to be resolved into symmetry
 c     adapted combinations use Jacobi not dsyev and screen out junk
 c
-      lenwork = max(nvar**2,100)
+cdsyev      lenwork = max(nvar**2,100)
+      lenwork = max(1+6*nvar+2*nvar**2,100)
       if (.not. ma_push_get(mt_dbl, lenwork, 'work',
      $     l_work, k_work)) call errquit
+     $     ('driver_search_dir: memory for hessian', lenwork, MA_ERR)
+      leniwork = max(3+5*nvar,100)
+      if (.not. ma_push_get(mt_int, leniwork, 'iwork',
+     $     l_iwork, k_iwork)) call errquit
      $     ('driver_search_dir: memory for hessian', lenwork, MA_ERR)
       do i = 0, nvar**2-1
          if (abs(dbl_mb(k_hess+i)).lt.1d-8) dbl_mb(k_hess+i) = 0d0
       enddo
-*      call dsyev('v', 'u', nvar, dbl_mb(k_hess), 
-*     $     nvar, e, dbl_mb(k_work), lenwork, info)
-*      if (info .ne. 0) call errquit
-*     $     ('driver_search_dir: dsyev failed',info, 0)
-      call util_jacobi(nvar, dbl_mb(k_hess), nvar, e)
+      if (ofast_diag) then
+c         call dsyev('v', 'u', nvar, dbl_mb(k_hess), 
+c     $        nvar, e, dbl_mb(k_work), lenwork, info)
+         call dsyevd('v', 'u', nvar, dbl_mb(k_hess), 
+     $        nvar, e, dbl_mb(k_work), lenwork,
+     I        int_mb(k_iwork),leniwork,info)
+         if (info .ne. 0) call errquit
+     $        ('driver_search_dir: dsyev failed',info, 0)
+      else
+         call util_jacobi(nvar, dbl_mb(k_hess), nvar, e)
+      endif
       if (odebug .or. (util_print('hvecs',print_never) 
      $     .and. ga_nodeid().eq.0)) then
          write(6,*) ' Eigenvalues of the Hessian '
@@ -1945,8 +1964,8 @@ c     Edo seems to have encountered a case where different processors
 c     generated different steps.  To prevent this, broadcast the 
 c     critical info to everyone.
 c
-      call ga_brdcst(1,ds,8*nvar,0)
-      call ga_brdcst(2,alpha,8,0)
+      call ga_brdcst(1,ds, ma_sizeof(mt_dbl,nvar,mt_byte),0)
+      call ga_brdcst(2,alpha, ma_sizeof(mt_dbl,1,mt_byte),0)
 c
       if (util_print('searchdir',print_high) .and. 
      $     ga_nodeid().eq.0) then
@@ -1986,6 +2005,8 @@ c
       double precision e0, e1, e2p, dsgrad
       double precision hess, a0, a1, a2
       double precision driver_energy_step
+      double precision ddot
+      external ddot
 c
       dsgrad = ddot(nvar, ds, 1, g, 1)
       if (dsgrad*alpha .ge. 0d0) then
@@ -2139,6 +2160,8 @@ c
       integer i, j
       double precision walka(5), walke(5),dum
       logical success
+      double precision ddot
+      external ddot
 c
       dsgrad = ddot(nvar, ds, 1, g, 1)
       if (dsgrad*alpha .ge. 0d0) then
@@ -2748,6 +2771,8 @@ c
       logical omm
       logical task_qmmm
       logical opt_geom_cart_coords_get
+      double precision ddot
+      external ddot
       ind(i,j) = k_pmat + i-1 + (j-1)*ncart
 c     
 c     FRACTIONAL?
@@ -3021,7 +3046,8 @@ c
          enddo
          close(unit=h_unit,status='keep')
       endif
-      call ga_brdcst(1,dbl_mb(k_hc),8*ncart**2,0)
+      call ga_brdcst(1,dbl_mb(k_hc),
+     c     ma_sizeof(mt_dbl,ncart**2,mt_byte),0)
 c     
       call geom_hnd_get_data('b^-1', dbl_mb(k_bi), nvar*ncart)
       call dgemm('n', 'n', ncart, nvar, ncart, 1d0, dbl_mb(k_hc), ncart,
@@ -3064,6 +3090,7 @@ c
 #include "mafdecls.fh"
 #include "global.fh"
 #include "util.fh"
+#include "util_params.fh"
       integer rtdb
       integer geom
       integer istep
@@ -3080,8 +3107,8 @@ c     On first geometry optimization step need to identify
 c     the search direction.
 c     
       integer i
-*     integer info
       integer l_hess, k_hess, l_work, k_work, lenwork
+      integer l_iwork, k_iwork, leniwork
       double precision  e(max_nvar) ! Hessian eigenvalues
       double precision pg(max_nvar) ! P.g
       double precision gv(max_nvar) ! Gradient along eigenvectors
@@ -3091,6 +3118,7 @@ c
       double precision dsmax    ! Max. value of current step (smax is prev.)
 c     
       integer nzero, negeig, idamax, mod2, ntest
+      integer info
       double precision bohr, deg ! For printing purposes
       double precision trustds  ! Restriction of step in opt. variable
       double precision gvrms, dir, tmp1, tmp2, ovtol
@@ -3100,6 +3128,9 @@ c
 c
       logical geom_print_zmatrix, omatchneg
       save saddir, evalp
+
+      double precision ddot
+      external ddot
 c     
       omatchneg = .true.
       ovtol     = 0.7d0
@@ -3124,14 +3155,22 @@ c
       if (.not. ma_push_get(mt_dbl, lenwork, 'work',
      $     l_work, k_work)) call errquit
      $     ('driver_search_dir: memory for hessian', lenwork, GEOM_ERR)
+      leniwork = max(3+5*nvar,100)
+      if (.not. ma_push_get(mt_int, leniwork, 'iwork',
+     $     l_iwork, k_iwork)) call errquit
+     $     ('driver_search_dir: memory for hessian', lenwork, MA_ERR)
       do i = 0, nvar**2-1
          if (abs(dbl_mb(k_hess+i)).lt.1d-8) dbl_mb(k_hess+i) = 0d0
       enddo
-c$$$  call dsyev('v', 'u', nvar, dbl_mb(k_hess), 
-c$$$  $     nvar, e, dbl_mb(k_work), lenwork, info)
-c$$$  if (info .ne. 0) call errquit
-c$$$  $     ('driver_search_dir: dsyev failed',info, GEOM_ERR)
-      call util_jacobi(nvar, dbl_mb(k_hess), nvar, e)
+      if(ofast_diag) then
+         call dsyevd('v', 'u', nvar, dbl_mb(k_hess), 
+     $        nvar, e, dbl_mb(k_work), lenwork,
+     I        int_mb(k_iwork),leniwork,info)
+         if (info .ne. 0) call errquit
+     $        ('driver_search_dir: dsyev failed',info, GEOM_ERR)
+      else
+         call util_jacobi(nvar, dbl_mb(k_hess), nvar, e)
+      endif
       if (odebug .or. (util_print('hvecs',print_never) 
      $     .and. ga_nodeid().eq.0)) then
          write(6,*) ' Eigenvalues of the Hessian '
@@ -3437,16 +3476,16 @@ c     Edo seems to have encountered a case where different processors
 c     generated different steps.  To prevent this, broadcast the 
 c     critical info to everyone.
 c     
-      call ga_brdcst(1,ds,8*nvar,0)
-      call ga_brdcst(2,alpha,8,0)
+      call ga_brdcst(1,ds, ma_sizeof(mt_dbl,nvar,mt_byte),0)
+      call ga_brdcst(2,alpha, ma_sizeof(mt_dbl,1,mt_byte),0)
 c     
       if (util_print('searchdir',print_high) .and. 
      $     ga_nodeid().eq.0) then
          write(6,*)
          write(6,*) '       The search direction'
          if (zcoord) then
-            bohr = 0.52917715d0
-            deg  = 0.52917715d0*180d0/(4d0*atan(1d0))
+            bohr = cau2ang
+            deg  = bohr*180d0/(4d0*atan(1d0))
             call geom_zmat_ico_scale(geom, ds, bohr, deg)
             if (.not. geom_print_zmatrix(geom, ds, 'Search  ',.true.))
      $           call errquit('driver:print search_dir?',geom, GEOM_ERR)
@@ -4391,19 +4430,51 @@ C     Add some to diagonal for stability, just in case of lone floating atom
       integer i
       integer grp_num
       integer crystal
-      double precision lstress_sym(0:5)
+      double precision lstress_sym(0:5),radtodeg,lat(6)
       integer Triclinic,Monoclinic,Orthorhombic
       integer Tetragonal,Trigonal,Hexagonal,Cubic
       parameter (Triclinic=1,Monoclinic=2,Orthorhombic=3)
       parameter (Tetragonal=4,Trigonal=5,Hexagonal=6,Cubic=7)
-      logical value
+      logical value,is_conventional
+c      logical is90(3),g120,isab,isac,isbc
+      logical is_A,is_C,is_R,is_F,is_I
       integer isystype
+      character*1 ctr_type
+
 !     Called functions
       integer geom_get_group_number
       external geom_get_group_number
+      logical  geom_is_conventional
+      external geom_is_conventional
+      character*1 geom_primitive_center
+      external    geom_primitive_center
 !
+      if (.not. geom_lattice_get(geom, lat))
+     $        call errquit('driver: failed to get lat',0,0)
+
+
+      radtodeg = 180.0d0/(4.0d0*datan(1.0d0))
       value = geom_systype_get(geom,isystype)
       grp_num=geom_get_group_number(geom)
+      is_conventional = geom_is_conventional(geom)
+      ctr_type = geom_primitive_center(geom)
+      is_conventional = ctr_type.eq.'x'
+      is_A =  ctr_type.eq.'A'
+      is_C =  ctr_type.eq.'C'
+      is_F =  ctr_type.eq.'F'
+      is_I =  ctr_type.eq.'I'
+      is_R =  ctr_type.eq.'R'
+c      write(*,*) "is_conventional,ctr_type=",is_conventional,ctr_type,
+c     >  is_A,is_C,is_F,is_I,is_R
+
+c      value = geom_lattice_get(geom, lat)
+c      is90(1) = (dabs((lat(4)*radtodeg)-90.0d0).lt.1.0d-3)
+c      is90(2) = (dabs((lat(5)*radtodeg)-90.0d0).lt.1.0d-3)
+c      is90(3) = (dabs((lat(6)*radtodeg)-90.0d0).lt.1.0d-3)
+c      g120    = (dabs((lat(6)*radtodeg)-120.0d0).lt.1.0d-3)
+c      isab    = (dabs(lat(1)-lat(2)).lt.1.0d-3)
+c      isac    = (dabs(lat(1)-lat(3)).lt.1.0d-3)
+c      isbc    = (dabs(lat(2)-lat(3)).lt.1.0d-3)
 
       if (grp_num.lt.3)                         crystal = Triclinic
       if ((grp_num.ge.3  ).and.(grp_num.lt.16 ))crystal = Monoclinic
@@ -4419,41 +4490,127 @@ C     Add some to diagonal for stability, just in case of lone floating atom
         lstress_sym(3) = lstress(3)
         lstress_sym(4) = lstress(4)
         lstress_sym(5) = lstress(5)
+
       else if (crystal.eq.Monoclinic) then
-        lstress_sym(0) = lstress(0)
-        lstress_sym(1) = lstress(1)
-        lstress_sym(2) = lstress(2)
-        lstress_sym(3) = 0.0D0
-        lstress_sym(4) = lstress(4)
-        lstress_sym(5) = 0.0D0
+        if (is_conventional) then
+           lstress_sym(0) = lstress(0)
+           lstress_sym(1) = lstress(1)
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = 0.0D0
+           lstress_sym(4) = lstress(4)
+           lstress_sym(5) = 0.0D0
+        else
+           !** C-centered primitive **
+           lstress_sym(0) = (lstress(0)+lstress(1))/2.0d0
+           lstress_sym(1) = (lstress(0)+lstress(1))/2.0d0
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = lstress(3)
+           lstress_sym(4) = lstress(4)
+           lstress_sym(5) = lstress(5)
+        end if
+
       else if (crystal.eq.Orthorhombic) then
-        lstress_sym(0) = lstress(0)
-        lstress_sym(1) = lstress(1)
-        lstress_sym(2) = lstress(2)
-        lstress_sym(3) = 0.0D0
-        lstress_sym(4) = 0.0D0
-        lstress_sym(5) = 0.0D0
+        if (is_conventional) then
+           lstress_sym(0) = lstress(0)
+           lstress_sym(1) = lstress(1)
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = 0.0D0
+           lstress_sym(4) = 0.0D0
+           lstress_sym(5) = 0.0D0
+        else
+           !** C-centered primitive **
+c           if (isab.and.is90(1).and.is90(2).and.(.not.is90(3))) then
+           if (is_C) then
+              lstress_sym(0) = (lstress(0)+lstress(1))/2.0d0
+              lstress_sym(1) = (lstress(0)+lstress(1))/2.0d0
+              lstress_sym(2) = lstress(2)
+              lstress_sym(3) = 0.0d0
+              lstress_sym(4) = 0.0d0
+              lstress_sym(5) = lstress(5)
+           !** A-centered primitive ***
+c           else if (isbc.and.
+c     >              (.not.is90(1)).and.
+c     >              is90(2).and.
+c     >              is90(3).and.isbc) then
+           else if (is_A) then
+              lstress_sym(0) = lstress(0)
+              lstress_sym(1) = (lstress(1)+lstress(2))/2.0d0
+              lstress_sym(2) = (lstress(1)+lstress(2))/2.0d0
+              lstress_sym(3) = lstress(3)
+              lstress_sym(4) = 0.0d0
+              lstress_sym(5) = 0.0d0
+           !** I-centered primitive **
+           !else if (isab.and.isac.and.isbc) then
+           else if (is_I) then
+              lstress_sym(0) = (lstress(0)+lstress(1)+lstress(2))/3.0d0
+              lstress_sym(1) = (lstress(0)+lstress(1)+lstress(2))/3.0d0
+              lstress_sym(2) = (lstress(0)+lstress(1)+lstress(2))/3.0d0
+              lstress_sym(3) = lstress(3)
+              lstress_sym(4) = lstress(4)
+              lstress_sym(5) = lstress(5)
+           !** F-centered primitive - everything changes**
+           else
+              lstress_sym(0) = lstress(0)
+              lstress_sym(1) = lstress(1)
+              lstress_sym(2) = lstress(2)
+              lstress_sym(3) = lstress(3)
+              lstress_sym(4) = lstress(4)
+              lstress_sym(5) = lstress(5)
+           end if
+        end if
+
       else if (crystal.eq.Tetragonal) then
-        lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(2) = lstress(2)
-        lstress_sym(3) = 0.0D0
-        lstress_sym(4) = 0.0D0
-        lstress_sym(5) = 0.0D0
+        if (is_conventional) then
+           lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = 0.0D0
+           lstress_sym(4) = 0.0D0
+           lstress_sym(5) = 0.0D0
+        else
+           !** I-centered primitive **
+           lstress_sym(0) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(1) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(2) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(3) = (lstress(3)+lstress(4))/2.0d0
+           lstress_sym(4) = (lstress(3)+lstress(4))/2.0d0
+           lstress_sym(5) = lstress(5)
+        end if
+
       else if (crystal.eq.Trigonal) then
-        lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(2) = lstress(2)
-        lstress_sym(3) = 0.0D0
-        lstress_sym(4) = 0.0D0
-        lstress_sym(5) = 0.0D0
+        if (is_conventional) then
+           lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = 0.0D0
+           lstress_sym(4) = 0.0D0
+           lstress_sym(5) = 0.0D0
+        else
+           !** R-centered primitive **
+           lstress_sym(0) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(1) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(2) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
+           lstress_sym(3) = (lstress(3)+lstress(4)+lstress(5))/3.0D0
+           lstress_sym(4) = (lstress(3)+lstress(4)+lstress(5))/3.0D0
+           lstress_sym(5) = (lstress(3)+lstress(4)+lstress(5))/3.0D0
+        end if
       else if (crystal.eq.Hexagonal) then
-        lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
-        lstress_sym(2) = lstress(2)
-        lstress_sym(3) = 0.0D0
-        lstress_sym(4) = 0.0D0
-        lstress_sym(5) = 0.0D0
+        if (is_conventional) then
+           lstress_sym(0) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(1) = (lstress(0)+lstress(1))/2.0D0
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = 0.0D0
+           lstress_sym(4) = 0.0D0
+           lstress_sym(5) = 0.0D0
+        else
+           !** Should never happen **
+           lstress_sym(0) = lstress(0)
+           lstress_sym(1) = lstress(1)
+           lstress_sym(2) = lstress(2)
+           lstress_sym(3) = lstress(3)
+           lstress_sym(4) = lstress(4)
+           lstress_sym(5) = lstress(5)
+        end if
       else if (crystal.eq.Cubic) then
         lstress_sym(0) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
         lstress_sym(1) = (lstress(0)+lstress(1)+lstress(2))/3.0D0
@@ -4461,6 +4618,8 @@ C     Add some to diagonal for stability, just in case of lone floating atom
         lstress_sym(3) = 0.0D0
         lstress_sym(4) = 0.0D0
         lstress_sym(5) = 0.0D0
+        !** I-centered primitive 0 equal dist, all angs=109.471**
+        !** F-centered primitive - equal dist, all angs=60**
       endif
       do i = 0, 5
         lstress(i) = lstress_sym(i)

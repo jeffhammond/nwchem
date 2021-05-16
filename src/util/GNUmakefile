@@ -16,12 +16,8 @@ ifeq ($(TARGET),MACX)
   LIB_DEFINES += -DOLD_GA
 endif
 
-ifeq ($(NWCHEM_LONG_PATHS),Y)
    MXLENPATH = 200
    LIB_DEFINES += -DNWCHEM_LONG_PATHS
-else
-   MXLENPATH = 64
-endif
    LONGNWTOP = $(shell if [ `echo $(SRCDIR) |wc -m` -gt $(MXLENPATH) ]; then echo "Y"; fi  )
 ifeq ($(LONGNWTOP),Y)
 errorlongpwd:
@@ -152,9 +148,6 @@ endif
 ifneq ($(OLD_GA),)
   EXTRA_OBJ += ga_zgop.o
 endif
-ifdef USE_OFFLOAD
-  EXTRA_OBJ += util_mic_support.o
-endif
 #LIB_DEFINES += -I$(MPI_INCLUDE)
 ifneq ($(MPI_INCLUDE),)
    LIB_INCLUDES += $(patsubst -I-I%,-I%,-I$(MPI_INCLUDE))
@@ -162,6 +155,10 @@ endif
 
 ifdef USE_VTUNE
   EXTRA_OBJ += vtune_bind.o vtune.o
+endif
+
+ifeq ($(shell echo $(BLASOPT) |awk '/Accelerate/ {print "Y"; exit}'),Y)
+  EXTRA_OBJ += veclib_threads.o
 endif
 
        BLAS = dfill.o ifill.o  mabyte_fill.o zfill.o
@@ -173,7 +170,7 @@ endif
                  util_jacobi.o util_rsg.o stpr_sjacobi.o util_memcpy.o ga_accback.o \
                  ga_asymmetr.o util_gnxtval.o nxtask.o util_mirror.o  \
                  ga_copy_dz.o dgami.o util_eri_cholesky.o \
-                 util_test_cholesky.o util_sillysort.o
+                 util_test_cholesky.o util_sillysort.o util_talker.o
 
   SUBDIRS = md5
 
@@ -226,6 +223,8 @@ endif
 	      util_mygabcast.o util_getppn.o util_units.o util_align.o\
               util_intrsc2008.o util_fadvise.o  util_scalapack_info.o\
               ga_conjg.o nwmolden.o ao_1prdm_read.o ao_1prdm_write.o\
+              util_strips.o util_poltensor.o  util_mygop.o util_isnan.o \
+              util_blasthreads.o \
               $(EXTRA_OBJ)
 ifndef USE_MLIB
               OBJ_OPTIMIZE += icopy.o dsum.o dgefa.o zsum.o
@@ -243,7 +242,7 @@ endif
 
     USES_BLAS = util.fh ga_it_lsolve.F ga_maxelt.F ga_mix.F ga_iter_diag.F \
                 ga_orthog.F dabsmax.F ga_normf.F corr_mk_ref.F ga_it2.F ga_lkain_ext.F util_file_name.F dgefa.f util_patch_test.F stpr_sjacobi.F util_dgeev.F \
-		util_test_cholesky.F dfill.F ga_lkain_2cpl3_ext.F ga_it2.F
+		util_test_cholesky.F dfill.F ga_lkain_2cpl3_ext.F ga_it2.F util_poltensor.F
 
 ifdef SPEECH
    LIB_DEFINES += -DSPEECH
@@ -302,6 +301,11 @@ ifdef TCE_CUDA
   OBJ += util_cuda_support.o
 endif
 
+ifdef TCE_HIP
+  LIB_DEFINES += $(HIP_INCLUDE)
+  OBJ += util_cuda_support.o
+endif
+
 ifdef USE_FORTRAN2003
   LIB_DEFINES += -DUSE_FORTRAN2003
 endif
@@ -350,6 +354,8 @@ testsolve:      testsolve.o $(LIBRARY_PATH)
 testecce:      testecce.o $(LIBRARY_PATH)
 	$(FC) $(FFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+test_intrsc2008: test_intrsc2008.o $(LIBRARY_PATH)
+	$(FC) $(FFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 USE_LL = LAPI LAPI64
 

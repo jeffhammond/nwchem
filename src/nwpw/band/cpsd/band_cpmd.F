@@ -196,8 +196,8 @@ c      parameter (autoatm =290.360032539d6)
       external      cpsp_comment
       integer  ion_nconstraints,ion_ndof
       external ion_nconstraints,ion_ndof
-      logical  ion_disp_on,ion_makehmass2
-      external ion_disp_on,ion_makehmass2
+      logical  ion_disp_on,ion_makehmass2,control_only_lda
+      external ion_disp_on,ion_makehmass2,control_only_lda
 
 
 
@@ -210,7 +210,7 @@ c      parameter (autoatm =290.360032539d6)
       pi = 4.0d0*datan(1.0d0)
 
       call nwpw_timing_init()
-      call dcopy(30,0.0d0,0,E,1)
+      call dcopy(50,0.0d0,0,E,1)
 
 
 *     **** get parallel variables ****
@@ -268,6 +268,14 @@ c      parameter (autoatm =290.360032539d6)
 *     **** initialize psi_data ****
       call cpsi_data_init(20)
 
+*     **** read ions ****
+      value = ion_init(rtdb)
+      call center_geom(cx,cy,cz)
+      call center_mass(gx,gy,gz)
+
+*     **** initialize FixIon constraint ****
+      call ion_init_FixIon(rtdb)
+
 *     **** initialize lattice and packing data structure ****
       call lattice_init()
       call c_G_init()
@@ -276,19 +284,20 @@ c      parameter (autoatm =290.360032539d6)
       call C3dB_pfft_init()
 
 *     ***** Initialize double D3dB data structure ****
-      if ((control_gga().ge.10).and.(control_gga().lt.100)) then
+      !if ((control_gga().ge.10).and.(control_gga().lt.100)) then
+      if (.not.control_only_lda()) then
          call D3dB_Init(1,ngrid(1),ngrid(2),ngrid(3),mapping)
          call G_init()
          call mask_init()
       end if
 
-*     **** read ions ****
-      value = ion_init(rtdb)
-      call center_geom(cx,cy,cz)
-      call center_mass(gx,gy,gz)
+c*     **** read ions ****
+c      value = ion_init(rtdb)
+c      call center_geom(cx,cy,cz)
+c      call center_mass(gx,gy,gz)
 
-*     **** initialize FixIon constraint ****
-      call ion_init_FixIon(rtdb)
+c*     **** initialize FixIon constraint ****
+c      call ion_init_FixIon(rtdb)
 
 *     **** allocate psp data structure and read in psedupotentials into it ****
       call cpsp_init()
@@ -311,7 +320,8 @@ c      parameter (autoatm =290.360032539d6)
          spin_orbit = .false.
       end if
       nbrillioun = brillioun_nbrillioun()
-      call Pneb_init(ispin,ne,nbrillioun,spin_orbit)
+      mapping1d  = control_mapping1d()
+      call Pneb_init(ispin,ne,nbrillioun,mapping1d,spin_orbit)
       call Pneb_neq(neq)
 
 
@@ -322,7 +332,6 @@ c      parameter (autoatm =290.360032539d6)
       else
          fractional = .false.
       end if
-      mapping1d = control_mapping1d()
       ispinq  = Pneb_ispinq()
       nbrillq = Pneb_nbrillq()
 
@@ -898,7 +907,7 @@ c         if (mulliken) call Orb_Write(dcpl_mb(psi1(1)))
       if (icount.lt.it_out) go to 101
       if (mprint)
      > write(luout,*) 
-     > '*** arived at the Maximum iteration.   terminated.'
+     > '*** arrived at the Maximum iteration.   terminated.'
  
 *::::::::::::::::::::  end of iteration loop  :::::::::::::::::::::::::
 
@@ -1251,7 +1260,9 @@ c      call pspw_qmmm_end()
       call C3dB_pfft_end()
       call cpsi_data_end()
       call C3dB_end(1)
-      if ((control_gga().ge.10).and.(control_gga().lt.100)) then
+      call Pneb_end()
+      !if ((control_gga().ge.10).and.(control_gga().lt.100)) then
+      if (.not.control_only_lda()) then
          call mask_end()
          call G_end()
          call D3dB_end(1)
@@ -1307,12 +1318,12 @@ ccc
  1100 FORMAT(//)
  1110 FORMAT(10X,'================ input data ========================')
  1111 FORMAT(/' number of processors used:',I16)
- 1112 FORMAT( ' parallel mapping         :         1d slab')
- 1113 FORMAT( ' parallel mapping         :      2d hilbert')
+ 1112 FORMAT( ' parallel mapping         :         1d-slab')
+ 1113 FORMAT( ' parallel mapping         :      2d-hilbert')
  1114 FORMAT( ' parallel mapping         :        balanced')
  1115 FORMAT(/' options:')
  1116 FORMAT( ' parallel mapping         :    not balanced')
- 1118 FORMAT( ' parallel mapping         :       2d hcurve')
+ 1118 FORMAT( ' parallel mapping         :       2d-hcurve')
  1117 FORMAT( ' processor grid           :',I4,' x',I4,' x',I4)
  1121 FORMAT(5X,' boundary conditions  = ',A,'(version', I1,')')
  1130 FORMAT(5X,' electron spin        = ',A)

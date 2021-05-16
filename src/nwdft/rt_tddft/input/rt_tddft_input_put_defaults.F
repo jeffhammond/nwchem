@@ -41,7 +41,8 @@ C      integer, parameter          :: nsnapshots = 0
       logical, parameter          :: nodisk = .false.   !XXX DISABLED NOW--ie, just use DFT settings
       logical, parameter          :: matrix_checks = .false. 
       logical, parameter          :: use_dmat = .false. 
-      logical, parameter          :: mocap = .false. 
+      logical, parameter          :: mocap = .false.
+      logical, parameter          :: spatialcap = .false. 
 
 
       character(len=*), parameter :: tag = "<rt_tddft>: "
@@ -61,6 +62,11 @@ C
       if (.not.rtdb_put(rtdb,'rt_tddft:print_dipole',
      $     mt_log,1,.true.))
      $     call errquit(pname//'Write failed to rtdb',0,RTDB_ERR)
+
+      if (.not.rtdb_put(rtdb,'rt_tddft:print_dipcontribs',
+     $     mt_log,1,.false.))
+     $     call errquit(pname//'Write failed to rtdb',0,RTDB_ERR)
+
 
       if (.not.rtdb_put(rtdb,'rt_tddft:print_quad',
      $     mt_log,1,.false.))
@@ -193,6 +199,8 @@ C
       if (.not.rtdb_put(rtdb,'rt_tddft:mocap_active',mt_log,1,mocap))
      $     call errquit(pname//'Write failed to rtdb',0,RTDB_ERR)
 
+      if (.not.rtdb_put(rtdb,'rt_tddft:cap_active',mt_log,1,spatialcap))
+     $     call errquit(pname//'Write failed to rtdb',0,RTDB_ERR)
 
       end subroutine
 

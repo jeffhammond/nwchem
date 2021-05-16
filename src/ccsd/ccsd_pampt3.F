@@ -31,6 +31,28 @@ C
      &        maxbfsh,max1e,mem1,max2e,mem2,lscr,lssni,
      &        g_x,g_c,g_st2,g_sht2,l_sch,k_sch,l_ish,k_ish,nrints,
      &        l_shinf,k_shinf,nsz_st2
+#ifdef USE_F90INTERFACE
+      interface
+      subroutine ccsd_sxy(basis,nsh,ncor,nocc,nvir,nact,nbf,g_st2,
+     &                    g_sht2,g_c,g_x,offsh,snsi,sisn,lssni,scre,
+     &                    mem2,max2e,eri1,eri2,t1,cmo,t1ao,scra,
+     &                    scrb,lscr,kscr,tol2e,iprt,tklst,maxints,
+     &                    ish_idx,shinf,max_sht2_blk,nbfdim,a_st2,
+     &                    use_ccsd_omp)
+      integer basis,nsh,ncor,nocc,nvir,nact,nbf,g_st2,g_sht2,
+     &        g_c,g_x,lssni,
+     &        mem2,max2e,lscr,kscr,iprt,max_sht2_blk,nbfdim
+      integer offsh(nsh,nsh,*),tklst(*),maxints
+      integer ish_idx(*),shinf(nsh,*)
+      double precision tol2e,eri1(*),eri2(*),scre(*),
+     &                 t1(nocc*nvir),cmo(nbf,*),scra(*),
+     &                 scrb(*),snsi(*),sisn(*),
+     &     t1ao(*),a_st2(nocc*nocc,*)
+      logical, optional, intent(in) :: use_ccsd_omp
+      end subroutine
+      end interface
+#endif
+      logical schwarz1,schwarz2
       logical stat
       integer max_sht2_blk
       integer ilo,ihi,jlo,jhi,nbfdim,ish,jsh,nfi,nfj
@@ -566,11 +588,11 @@ c
      &                         ni,nj,nk,nl,nocc,lnoo,
      &                         keqi,jeql,use_ccsd_omp)
       implicit none
+      integer, intent(in)             :: ni,nj,nk,nl,nocc,lnoo
       double precision, intent(in)    :: eri1(nl,nk,nj,ni)
       double precision, intent(in)    :: eri2(nj,nk,nl,ni)
       double precision, intent(in)    :: t2(lnoo,nk,ni)
       double precision, intent(inout) :: ht2(lnoo,nl,nj)
-      integer, intent(in)             :: ni,nj,nk,nl,nocc,lnoo
       logical, intent(in)             :: keqi,jeql,use_ccsd_omp
       double precision                :: gp, gm
       integer                         :: ipp,imm

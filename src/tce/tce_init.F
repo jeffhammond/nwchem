@@ -874,7 +874,23 @@ c
      2     call errquit('tce_init:QC-inconsistent qorb qela qelb nfv',0,
      2     rtdb_err)
          endif
-
+c qrotation
+c tce:afreq ---> tce:qrot
+c data stored in tce_prop.fh
+      if (.not.rtdb_get_info(rtdb,'tce:qrot',ma_type,anumrot,
+     1  date)) then
+        anumrot = 1
+        if (.not.rtdb_put(rtdb,'tce:anumrot',mt_int,1,anumrot))
+     1   call errquit('tce_init: failed to write anumrot',0,RTDB_ERR)
+      endif
+      if (.not.rtdb_get(rtdb,'tce:qrot',mt_dbl,anumrot,
+     1  arot)) then
+        arot(1) = 0.0d0
+        if (.not.rtdb_put(rtdb,'tce:qrot',mt_dbl,anumrot,arot))
+     1    call errquit('tce_init: failed to write arot',0,RTDB_ERR)
+      endif
+c
+c
        endif !quantumc
 !QuantumComputing
 c     --------------------------
@@ -1020,7 +1036,7 @@ c         endif
      3    call errquit('tce_init: ucc/uccsdt module overridden',0,
      4    UNKNOWN_ERR)
       else if (model.eq.'ccsdt') then
-        nointorb=.true.
+!        nointorb=.true.
         ctype='Coupled-cluster singles, doubles, & triples'
         if (perturbative.eq.'2_q') then
           ctype='Coupled-cluster through triples w/ perturbation'
@@ -1044,7 +1060,7 @@ c ccsd_act/eomccsd_act
      3    call errquit('tce_init: ucc/uccsdt module overridden',0,
      4    UNKNOWN_ERR)
       else if (model.eq.'ccsdtq') then
-        nointorb=.true.
+!        nointorb=.true.
         ctype='Coupled-cluster singles, doubles, triples, & quadruples'
         if ((module.ne.'tce').and.
      1      (module.ne.'ucc').and.
@@ -1342,7 +1358,7 @@ c
       nfiles = 0
       if (ioalg.eq.5) then
         if (dra_init(max_files,1.0d11,1.0d11,
-     1    dfloat(buffer_size)*dfloat(bytes)).ne.0)
+     1    dble(buffer_size)*dble(bytes)).ne.0)
      2    call errquit('tce_init: dra initialization failed',0,
      3    DISK_ERR)
       endif

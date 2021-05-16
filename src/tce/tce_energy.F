@@ -135,6 +135,13 @@
       double precision r4      ! Residual t4
       double precision residual! Largest residual
       integer dummy            ! Dummy argument for DIIS
+!!!     Sigma2 
+!!!      logical sig2
+!!!      integer l_s2_re,k_s2_re
+!!!      integer l_s2_im,k_s2_im
+!!!      integer l_fs2_a,k_fs2_a
+!!!      integer size_s2
+!!!      double precision eta
 ! FOR LRH-SD
       integer d_j1,d_j2
       integer l_j1_offset,l_j2_offset
@@ -150,15 +157,28 @@
       integer irow,icol,index_pair
       integer k_aux,l_aux
       integer range_ov,range_occ
-      integer nos,nvs,noas,nobs,nvas,nvbs,nactv
+      integer nos,nvs,noas,nobs,nvas,nvbs,nactv,mov
+      integer nacto,nrotv,nrot
+      integer q_ele_a,q_ele_b,q_orb
       double precision xxx,xnorm1,xnorm2,xnorm
       double precision l1norm,ehfa,enrep_tce
 c      double precision v4m(50,50,50,50)
 c      double precision f2m(50,50)
       integer k_f2m,l_f2m,size_f2m
       integer k_v4m,l_v4m,size_v4m
+      integer l_xrot,k_xrot
       logical quantumc,spust
+      logical qrotation   !quantum rotation in active orbital space
+c
+      logical pwtce
+c
       logical qducc
+c ucc4 with intorb option
+      integer l_v2aux_offset,k_v2aux_offset,size_2eaux
+      integer d_v2copy,k_v2copy_offset
+      integer d_v2aux
+c
+      logical ucc4
       character*4 hftype
 !QuantumComputing
 ! FOR CR-EOMCCSD(T) ---------------------
@@ -221,7 +241,7 @@ c      double precision f2m(50,50)
       external scf
       integer i
       integer j
-#ifdef TCE_CUDA
+#if defined(TCE_CUDA) || defined(TCE_HIP)
       integer icuda
 #endif
 !#ifdef EACCSD
@@ -538,6 +558,19 @@ c      double precision f2m(50,50)
       parameter(pi = 3.14159265358979323846264338327950288419D0)
       character*255 modelname
       integer fldgts
+cducc
+      integer l_transf,k_transf,
+     1      l_act1,k_act1,
+     1      l_prt1,k_prt1,
+     1      l_act2,k_act2,
+     1      l_prt2,k_prt2,
+     1      l_h,k_h,
+     1      l_horb,k_horb,
+     1      l_v,k_v,
+     1      l_t1,k_t1,
+     1      l_t2,k_t2,
+     1      l_ht,k_ht,
+     1      l_vt,k_vt
       logical do_ccd, do_lccd, do_ccsd, do_lccsd, do_qcisd
       logical do_pt, do_lam_pt, do_cr_pt, do_lcr_pt, do_2t_pt
 !
@@ -685,21 +718,14 @@ cold        rec_mem=1
        if (.not.rtdb_get(rtdb,'tce:maxioprocs',mt_int,1,max_ioprocs_in)) 
      4      max_ioprocs_in=4
 !QuantumComputing
-       res_log=.false.
-       if (.not.rtdb_get(rtdb,'tce:print_integrals',
-     4  mt_log,1,res_log)) then
-        quantumc=.false.
-       else
-        quantumc=res_log
-       end if
+       if (.not.rtdb_get(rtdb,'tce:ucc4',
+     4  mt_log,1,ucc4)) ucc4=.false.
 !QuantumComputing
-       res_log=.false.
+       if (.not.rtdb_get(rtdb,'tce:print_integrals',
+     4  mt_log,1,quantumc)) quantumc=.false.
+!QuantumComputing
        if (.not.rtdb_get(rtdb,'tce:qducc',
-     4  mt_log,1,res_log)) then
-        qducc=.false.
-       else
-        qducc=res_log
-       end if
+     4  mt_log,1,qducc)) qducc=.false.
 !QuantumComputing
        if(qducc) then 
        nactv=0
@@ -708,17 +734,46 @@ cold        rec_mem=1
      2      RTDB_ERR)
         end if
        end if ! if qducc
+!QuantumComputing qrotation
+       if (.not.rtdb_get(rtdb,'tce:qrotation',
+     4  mt_log,1,qrotation)) qrotation=.false.
+       nacto=0
+       nrotv=0
+       nrot=0
+      if(qrotation) then
+        if (.not.rtdb_get(rtdb,'tce:nacto',mt_int,1,nacto))
+     1    call errquit('tce_energy:nacto=0 while qrotation T',0,
+     2      RTDB_ERR)
+        if (.not.rtdb_get(rtdb,'tce:nrotv',mt_int,1,nrotv))
+     1    call errquit('tce_energy:nrotv=0 while qrotation T',0,
+     2      RTDB_ERR)
+         nrot=nacto+nrotv
+       endif !qrotation --> nacto/nrotv
+c qrotation
 c
        if(.not.rtdb_cget(rtdb,'scf:scftype',1,hftype))
      1   call errquit('tce_energy: failed to read scftype',0,RTDB_ERR)
 c *** debug ***
-       if(nodezero) then
-         write(6,*)'hftype ',hftype
-         call util_flush(6)
-       endif
+c       if(nodezero) then
+c         write(6,*)'hftype ',hftype
+c         call util_flush(6)
+c       endif
 c *************
 c
 !QuantumComputing
+       if (.not.rtdb_get(rtdb,'tce:pwtce',
+     4  mt_log,1,pwtce)) pwtce=.false.
+c
+!QuantumComputing
+!
+! Sigma2
+!!!       res_log=.false.
+!!!       if (.not.rtdb_get(rtdb,'tce:sigma2',
+!!!     4  mt_log,1,res_log)) then
+!!!        sig2=.false.
+!!!       else
+!!!        sig2=res_log
+!!!       end if
 !
        res_log=.false.
        if (.not.rtdb_get(rtdb,'tce:readint',mt_log,1,res_log)) then
@@ -776,19 +831,12 @@ c
         write_in3=res_log
        end if
 !
-       res_log=.false.
-       if (.not.rtdb_get(rtdb,'tce:nts',mt_log,1,res_log)) then
-         continue 
-       else
-         ccsd_var='ic'
-       end if
+       if (.not.rtdb_get(rtdb,'tce:nts',mt_log,1,res_log)) 
+     c      res_log=.true.
+       if(res_log.and.(ccsd_var.eq.'none')) ccsd_var='ic'
 !
        slice=.false.
-       if (.not.rtdb_get(rtdb,'tce:xmem',mt_int,1,xmem)) then
-         continue
-       else
-         slice=.true. 
-       end if
+       if (rtdb_get(rtdb,'tce:xmem',mt_int,1,xmem))slice=.true. 
 !
        d4d5=.false.
        if (.not.rtdb_get(rtdb,'tce:d4d5',mt_log,1,d4d5)) then
@@ -810,6 +858,13 @@ c
         write(LuOut,*)'SLICE:     ',slice
 !cx        write(LuOut,*)'XMEM:      ',xmem
         write(LuOut,*)'D4D5:      ',d4d5
+        write(LuOut,*)'quantumc:  ',quantumc
+        write(LuOut,*)'qrotation: ',qrotation
+        write(LuOut,*)'pwtce:     ',pwtce
+        write(LuOut,*)'qducc:     ',qducc
+        write(LuOut,*)'nacto:     ',nacto
+        write(LuOut,*)'nrotv:     ',nrotv
+        write(LuOut,*)'nrot:      ',nrot
         call util_flush(LuOut)
        end if
 
@@ -844,6 +899,55 @@ c     number of digits for parallel file prefix (util_file_name0 last arg)
 !     Reorder and tile orbitals
 !     =========================
 !
+! quantum rotation
+      if(qrotation) then
+c  getting from rtdb q_ele_a q_ele_b q_orb
+         if (.not.rtdb_get(rtdb,'tce:qela',mt_int,1,q_ele_a))
+     1     call errquit('tce_energy: failed to read qela',0,
+     2     rtdb_err)
+         if (.not.rtdb_get(rtdb,'tce:qelb',mt_int,1,q_ele_b))
+     1     call errquit('tce_energy: failed to read qelb',0,
+     2     rtdb_err)
+         if (.not.rtdb_get(rtdb,'tce:qorb',mt_int,1,q_orb))
+     1     call errquit('tce_energy: failed to read qorb',0,
+     2     rtdb_err)
+c
+c       if(nodezero) then
+c        write(6,*)'nacto ',nacto
+c        write(6,*)'q_ele_a ',q_ele_a
+c        write(6,*)'nrotv ',nrotv
+c        write(6,*)'nmo(1)-nocc(1)',nmo(1)-nocc(1)
+c        write(6,*)'nmo(1)  ',nmo(1)
+c        write(6,*)'nocc(1) ',nocc(1)
+c        call util_flush(1)
+c       endif
+c sanity check
+      if(nacto.ge.q_ele_a)
+     &   call errquit('tce: xort: nacto problem',0,MA_ERR)
+      if(nrotv.ge.nmo(1)-nocc(1))
+     &   call errquit('tce: xort: nacto problem',0,MA_ERR)
+c opening nrot x nrot xrot matrix
+       if(.not.ma_push_get(mt_dbl,nrot*nrot,'xrot',l_xrot,k_xrot))
+     1     call errquit('tce: xrot MA problem',0,MA_ERR)
+c
+       do i=1,nrot*nrot
+        dbl_mb(k_xrot+i-1)=0.0d0
+       enddo
+c
+      call xrot_ini(nrot,dbl_mb(k_xrot))
+c
+      call ga_sync()
+c
+      call rot_vir(rtdb,q_orb,q_ele_a,q_ele_b,nacto,nrotv,
+     &                   nrot,dbl_mb(k_xrot))
+c
+      call ga_sync()
+c closing xrot
+      if (.not.ma_pop_stack(l_xrot))
+     1     call errquit('l_xrot',15,MA_ERR)
+      endif !qrotation
+c
+c
       call tce_tile(rtdb)
       call sf_test
 !
@@ -1528,7 +1632,7 @@ c          call util_file_name('v2int',.false.,.true.,filename)
 ! === jaguar ===
          if(read_int)  then
 c          call util_file_name('v2int',.false.,.true.,filename)
-          call util_file_name0('v2int',.false.,.true.,5)
+          call util_file_name0('v2int',.false.,.true.,filename,fldgts)
           unitn=78
           call read_tensor(filename,d_v2,size_2e,unitn)
 !     re-split the int files?
@@ -1545,6 +1649,41 @@ c          call util_file_name('v2int',.false.,.true.,filename)
           call tce_mo2e_zones_4a_disk_ga_N5(rtdb,d_v2,
      1                                  kax_v2_alpha_offset,size_2e)
 !
+!
+!
+!
+!
+!
+      if(pwtce) then
+          if (.not.(hftype.eq.'RHF'))
+     1     call errquit('tce_energy:hnormal only with RHF reference',0,
+     2     RTDB_ERR)
+           do g1b=1,noab+nvab
+            if(int_mb(k_range+g1b-1).ne.1) then
+              call errquit('tce_energy:pwtce tilesize not equal 1',0,
+     2        RTDB_ERR)
+            endif
+           enddo
+           nos=int_mb(k_offset+noab-1)+int_mb(k_range+noab-1)
+           nvs=int_mb(k_offset+noab+nvab-1)+int_mb(k_range+noab+nvab-1)
+     &         -nos
+           noas=nos/2
+           nobs=nos/2
+           nvas=nvs/2
+           nvbs=nvs/2
+           mov=noas+nvas
+           call pw_tce(rtdb,d_v2,k_v2_alpha_offset,d_f1,k_f1_offset,
+     &       dbl_mb(k_evl_sorted),nos,nvs,noas,nobs,nvas,nvbs,mov,ehfa)
+c only nodezero has ref
+           if (.not.rtdb_get(rtdb,'tce:pwref',mt_dbl,1,ref))
+     &     call errquit('pwtce: failed to write ehfa',0,RTDB_ERR)
+c *** debug ***
+c        if(nodezero) then
+c         write(6,*)'ehfa pwtce: ',ref
+c         call util_flush(6)
+c        endif
+c *************
+      endif
 !
 !
 !
@@ -1749,7 +1888,7 @@ c
          end if
 ! ==============
          if(model.ne.'ccsd_act') then
-            write(6,*) ' chop v2 '
+             if (nodezero) write(6,*) ' chop v2 '
           call  tce_mo2e_zones_4a_disk_ga_chop_N5(rtdb,d_v2,
      1                                  kax_v2_alpha_offset,size_2e)
          else 
@@ -1801,7 +1940,7 @@ c
 ! === jaguar ===
          if(read_int)  then
 c          call util_file_name('v2int',.false.,.true.,filename)
-          call util_file_name0('v2int',.false.,.true.,5)
+          call util_file_name0('v2int',.false.,.true.,filename,fldgts)
           unitn=78
           call read_tensor(filename,d_v2,size_2e,unitn)
 !     re-split the int files?
@@ -1883,6 +2022,58 @@ c
         end if  ! read_in3
 ! ==============
       end if ! intorb -----------------------
+c
+c
+c
+c
+c  Tsources
+c  for UCC(4) model='ccsdt'
+c
+      if(intorb.and.((model.eq.'ccsdt').or.(model.eq.'ccsdtq'))) then
+        if(nodezero) then
+         write(6,*)'IN MAPPING 1 for UCC(4),CCSDT,CCSDTQ'
+         call util_flush(6)
+        end if
+        call tce_mo2e_offset(l_v2aux_offset,k_v2aux_offset,size_2eaux)
+        call tce_filename('v2aux',filename)
+        call createfile(filename,d_v2aux,size_2eaux)
+        call mapping_v2(rtdb,d_v2aux,k_v2aux_offset,
+     &             d_v2,k_v2_offset)
+      endif
+c end of Tsource
+c
+c
+c
+c
+cc =====   Sigma2 ======
+!!!      if(sig2) then
+!!!          omega = 0.010d0
+!!!          eta   = 0.001d0
+!!!          size_s2=(nmo(1)+nmo(ipol))*(nmo(1)+nmo(ipol))
+!!!          if(.not.MA_PUSH_GET(mt_dbl,size_s2,'s2_re',l_s2_re,k_s2_re))
+!!!     1      call errquit('k_s2_re',1,MA_ERR)
+!!!          if(.not.MA_PUSH_GET(mt_dbl,size_s2,'s2_im',l_s2_im,k_s2_im))
+!!!     1       call errquit('k_s2_im',1,MA_ERR)
+!!!          if (.not.MA_PUSH_GET(mt_dbl,size_s2,'s2_aux',l_fs2_a,k_fs2_a))
+!!!     1       call errquit('k_s2_aux',1,MA_ERR)
+!!!c
+!!!       call  sigma2(rtdb,d_v2,k_v2_offset,omega,eta,
+!!!     &          dbl_mb(k_s2_re),dbl_mb(k_s2_im))
+!!!c
+!!!         if(.not.MA_POP_STACK(l_fs2_a))
+!!!     &      call errquit('l_fs2_a',4,MA_ERR)
+!!!         if(.not.MA_POP_STACK(l_s2_im))
+!!!     &      call errquit('l_s2_im',4,MA_ERR)
+!!!         if(.not.MA_POP_STACK(l_s2_re))
+!!!     &      call errquit('l_fs2_a',4,MA_ERR)
+!!!      endif ! sig2
+cc === end of Sigma2 ===
+c
+c
+c
+c
+c
+c
 !
 !     ====================
 !     Initial t amplitudes
@@ -2929,9 +3120,11 @@ c
           call tce_string_x2(d_t2,k_t2_offset,0.10d0,irrep_t,xnorm)
           if(nodezero) write(6,*)'-------------------------------------'
 c
-c qducc starts here 
+          endif !quantumc
 c
-          if(qducc) then 
+c qducc starts here
+c
+          if(qducc) then
              if (.not.(hftype.eq.'RHF'))
      1        call errquit('tce_energy:qducc only with RHF reference',0,
      2        RTDB_ERR)
@@ -2943,6 +3136,51 @@ c
            nvas=nvs/2
            nvbs=nvs/2
 c -------------------
+c DUCC SECTION
+c
+           if (.not. geom_nuc_rep_energy(geom, enrep_tce))
+     &      call errquit('TCE:unable to get nuclear rep ',geom, 
+     &      GEOM_ERR)
+c
+          if(nodezero) then
+           write(6,*)'Ground state specification:'
+           write(6,*)'exp(T)|Ref>~(1+T)|Ref>'
+           call util_flush(6)
+          endif
+          if(nodezero) write(6,*)'------- a(p)+/a(q) strings ----------'
+           xnorm1 = 0.0d0
+           xnorm2 = 0.0d0
+           xnorm  = 0.0d0
+c
+           call tce_string_x1_norm(d_t1,k_t1_offset,0.10d0,irrep_t,
+     &                             xnorm1)
+           call tce_string_x2_norm(d_t2,k_t2_offset,0.10d0,irrep_t,
+     &                             xnorm2)
+c normalization only on nodezero / reference included
+           if(nodezero)  then
+            xnorm=(1.0d0)/(dsqrt(1.0d0+xnorm1+xnorm2))
+           endif
+c
+          call tce_string_ref(xnorm)
+          call tce_string_x1(d_t1,k_t1_offset,0.10d0,irrep_t,xnorm)
+          call tce_string_x2(d_t2,k_t2_offset,0.10d0,irrep_t,xnorm)
+          if(nodezero) write(6,*)'-------------------------------------'
+c
+      if(nodezero) then
+c yaml enerep_tce - coulomb_repulsion
+       write(6,*)'enrep_tce = ',enrep_tce
+c yaml red - this is hf_energy
+       write(6,6888) ref
+c yaml scf_energy_offset
+       write(6,6889) 0.0d0
+       write(6,*)'ALL OCCUPIED ORBITALS ARE ACTIVE IN DUCC --> NO SHIFT'
+       write(6,*)'Number of active orbitals',nactv+(nos/2)
+       write(6,*)'Number of active alpha electrons',noas
+       write(6,*)'Number of active beta electrons',nobs
+c
+      call util_flush(6)
+      endif 
+
          if(nodezero) then
           write(6,*)' nos ',nos
           write(6,*)' nvs ',nvs
@@ -2954,13 +3192,55 @@ c -------------------
           call util_flush(6)
          endif
 c -------------------
+        if (.not.MA_PUSH_GET(mt_int,nos+nvs,'transform',
+     1      l_transf,k_transf))
+     1      call errquit('transform',100,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_int,(nos+nvs)**2,'act1',
+     1      l_act1,k_act1))
+     1      call errquit('act1',101,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_int,(nos+nvs)**2,'prt1',
+     1      l_prt1,k_prt1))
+     1      call errquit('transform',102,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_byte,(nos+nvs)**4,'act2',
+     1      l_act2,k_act2))
+     1      call errquit('act2',103,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_byte,(nos+nvs)**4,'prt2',
+     1      l_prt2,k_prt2))
+     1      call errquit('prt2',104,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**2,'h',
+     1      l_h,k_h))
+     1      call errquit('h',200,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,((nos+nvs)/2)**2,'horb',
+     1      l_horb,k_horb))
+     1      call errquit('horb',201,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**4,'v',
+     1      l_v,k_v))
+     1      call errquit('v',202,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,nos*(nos+nvs),'t1',
+     1      l_t1,k_t1))
+     1      call errquit('t1',203,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos*nvs)**2,'t2',
+     1      l_t2,k_t2))
+     1      call errquit('t2',204,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**2,'ht',
+     1      l_ht,k_ht))
+     1      call errquit('ht',205,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**4,'vt',
+     1      l_vt,k_vt))
+     1      call errquit('vt',206,MA_ERR)
            call ducc(rtdb,d_t1,k_t1_offset,d_t2,k_t2_offset,
      &    d_v2,k_v2_offset,dbl_mb(k_evl_sorted),
-     &    nos,nvs,noas,nobs,nvas,nvbs,nactv)
+     &    nos,nvs,noas,nobs,nvas,nvbs,nactv,
+     D        int_mb(k_transf),int_mb(k_act1),int_mb(k_prt1),
+     D        byte_mb(k_act2),byte_mb(k_prt2),
+     D        dbl_mb(k_h),dbl_mb(k_horb),dbl_mb(k_v),
+     D        dbl_mb(k_t1),dbl_mb(k_t2),
+     D        dbl_mb(k_ht),dbl_mb(k_vt))
+              if (.not.ma_chop_stack(l_transf))
+     1        call errquit('tce_energy: chopstack ducc',4,MA_ERR)
           endif ! qducc
 c
 c
-          endif !quantumc
 !QuantumComputing
 #endif
 ! === jaguar ===
@@ -3060,7 +3340,7 @@ c
           call ccsd_t_fdist_init()
 #endif
           if (restart_ccsd_t.eq.0) then
-#ifdef TCE_CUDA
+#if defined(TCE_CUDA) || defined(TCE_HIP)
               if(.not.rtdb_get(rtdb,'tce:cuda',mt_int,1,icuda)) then
                if (nodezero) write(LuOut,*) 'Using plain CCSD(T) code'
                if (nodezero) call util_flush(LuOut)
@@ -3432,33 +3712,103 @@ c
 ! CCSDT   right
 ! -------------
         call tce_diis_init()
+c  Tsource
+      if(intorb) then
+         d_v2copy=d_v2
+         k_v2copy_offset=k_v2_offset
+         d_v2=d_v2aux
+         k_v2_offset=k_v2aux_offset
+      endif !intorb
+c end of Tsource
         do iter=1,maxiter
           cpu=-util_cpusec()
           wall=-util_wallsec()
-          if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "CCSDT"
+          if(.not.ucc4) then
+           if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "CCSDT"
+          else !ucc4
+           if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "UCC4"
+          endif
+c
+         if(ucc4) then
+          if(nodezero) then
+           write(6,*)'ucc4: iteration initlzation'
+            call util_flush(6)
+          endif
+          irrep_y=0
+          call tce_y2_offset(l_l2_offset,k_l2_offset,size_l2)
+          call tce_filename('lambda2',filename)
+          call createfile(filename,d_lambda2,size_l2)
+c call transition procedure
+          call t2_2_y2(d_t2,d_lambda2,k_t2_offset,k_l2_offset)
+         endif
+c
           call tce_filename('e',filename)
           call createfile(filename,d_e,size_e)
+          if(.not.ucc4) then
           call ccsdt_e(d_f1,d_e,d_t1,d_t2,d_v2,
      1                 k_f1_offset,k_e_offset,
      2                 k_t1_offset,k_t2_offset,k_v2_offset)
+          else ! ucc4
+           if(nodezero) then
+            write(6,*)'UCC4 energy'
+            call util_flush(6)
+          endif
+           call ucc4_e_new(d_e,d_t2,d_v2,d_lambda2,k_e_offset,
+     &          k_t2_offset,
+     &          k_v2_offset,k_l2_offset)
+          endif
           call reconcilefile(d_e,size_e)
+c
           call tce_filename('r1',filename)
           call createfile(filename,d_r1,size_t1)
+          if(.not.ucc4) then
           call ccsdt_t1(d_f1,d_r1,d_t1,d_t2,d_t3,d_v2,
      1                  k_f1_offset,k_t1_offset,k_t1_offset,
      2                  k_t2_offset,k_t3_offset,k_v2_offset)
+          else  ! ucc4
+          if(nodezero) then
+            write(6,*)'UCC4 singles'
+            call util_flush(6)
+          endif
+       call ucc4_t1_new(d_f1,d_r1,d_t1,d_t2,d_v2,k_f1_offset,
+     &         k_t1_offset,
+     &         k_t1_offset,k_t2_offset,k_v2_offset)
+          endif
           call reconcilefile(d_r1,size_t1)
+c
           call tce_filename('r2',filename)
           call createfile(filename,d_r2,size_t2)
+          if(.not.ucc4) then
           call ccsdt_t2(d_f1,d_r2,d_t1,d_t2,d_t3,d_v2,
      1                  k_f1_offset,k_t2_offset,k_t1_offset,
      2                  k_t2_offset,k_t3_offset,k_v2_offset,size_t2)
+          else !ucc4
+          if(nodezero) then
+           write(6,*)'UCC4 doubles'
+           call util_flush(6)
+          endif
+           call ucc4_t2(d_f1,d_r2,d_t1,d_t2,d_t3,d_v2,k_f1_offset,
+     &           k_t2_offset,
+     &           k_t1_offset,k_t2_offset,k_t3_offset,k_v2_offset)
+           call ucc4_t2_t2_v_t(d_r2,d_t2,d_v2,d_lambda2,k_t2_offset,
+     &           k_t2_offset,k_v2_offset,k_l2_offset)
+          endif
           call reconcilefile(d_r2,size_t2)
+c
           call tce_filename('r3',filename)
           call createfile(filename,d_r3,size_t3)
+          if(.not.ucc4) then
           call ccsdt_t3(d_f1,d_r3,d_t1,d_t2,d_t3,d_v2,
      1                  k_f1_offset,k_t3_offset,k_t1_offset,
      2                  k_t2_offset,k_t3_offset,k_v2_offset)
+          else  ! ucc4
+          if(nodezero) then
+           write(6,*)'UCC4 triples'
+           call util_flush(6)
+          endif
+           call ucc4_t3(d_f1,d_r3,d_t2,d_t3,d_v2,k_f1_offset,
+     &       k_t3_offset,k_t2_offset,k_t3_offset,k_v2_offset)
+          endif
           call reconcilefile(d_r3,size_t3)
           call tce_residual_t1(d_r1,k_t1_offset,r1)
           call tce_residual_t2(d_r2,k_t2_offset,r2)
@@ -3470,9 +3820,15 @@ c
           if (nodezero) write(LuOut,9100) iter,residual,corr,cpu,wall
           if (residual .lt. thresh) then
             if (nodezero) then
+             if(.not.ucc4) then
               write(LuOut,9060)
               write(LuOut,9070) "CCSDT",corr
               write(LuOut,9080) "CCSDT",ref + corr
+             else 
+              write(LuOut,9060)
+              write(LuOut,9070) "UCC(4)",corr
+              write(LuOut,9080) "UCC(4)",ref + corr
+             endif 
             endif
             if (diagnt1) call tce_diagnose_t1(d_t1,k_t1_offset,t1diagn)
             if (ampnorms) then
@@ -3489,8 +3845,148 @@ c
             call deletefile(d_r2)
             call deletefile(d_r1)
             call deletefile(d_e)
+c
+c delete d_lambda related objects: ucc4
+c
+            if(ucc4) then
+              call deletefile(d_lambda2)
+              if (.not.ma_pop_stack(l_l2_offset))
+     1        call errquit("tce_energy: l2_offset ucc4",4,MA_ERR)
+            endif
+c
             call tce_print_x1(d_t1,k_t1_offset,printtol,irrep_t)
             call tce_print_x2(d_t2,k_t2_offset,printtol,irrep_t)
+c
+c
+c
+c Tsource
+          if(qducc) then
+           if(nodezero) then
+            if(ucc4) then
+             write(LuOut,*)' UCC(4)  '
+            else
+             write(LuOut,*)' CCSDT  '
+            endif
+           endif
+             if (.not.(hftype.eq.'RHF'))
+     1        call errquit('tce_energy:qducc only with RHF reference',0,
+     2        RTDB_ERR)
+           nos=int_mb(k_offset+noab-1)+int_mb(k_range+noab-1)
+           nvs=int_mb(k_offset+noab+nvab-1)+int_mb(k_range+noab+nvab-1)
+     &         -nos
+           noas=nos/2
+           nobs=nos/2
+           nvas=nvs/2
+           nvbs=nvs/2
+
+CNPB           if (.not. geom_nuc_rep_energy(geom, enrep_tce))
+CNPB     &      call errquit('TCE:unable to get nuclear rep ',geom, 
+CNPB     &      GEOM_ERR)
+CNPBc
+CNPB          if(nodezero) then
+CNPB           write(6,*)'Ground state specification:'
+CNPB           write(6,*)'exp(T)|Ref>~(1+T)|Ref>'
+CNPB           call util_flush(6)
+CNPB          endif
+CNPB          if(nodezero) write(6,*)'------- a(p)+/a(q) strings ----------'
+CNPB           xnorm1 = 0.0d0
+CNPB           xnorm2 = 0.0d0
+CNPB           xnorm  = 0.0d0
+CNPBc
+CNPB           call tce_string_x1_norm(d_t1,k_t1_offset,0.10d0,irrep_t,
+CNPB     &                             xnorm1)
+CNPB           call tce_string_x2_norm(d_t2,k_t2_offset,0.10d0,irrep_t,
+CNPB     &                             xnorm2)
+CNPBc normalization only on nodezero / reference included
+CNPB           if(nodezero)  then
+CNPB            xnorm=(1.0d0)/(dsqrt(1.0d0+xnorm1+xnorm2))
+CNPB           endif
+CNPBc
+CNPB          call tce_string_ref(xnorm)
+CNPB          call tce_string_x1(d_t1,k_t1_offset,0.10d0,irrep_t,xnorm)
+CNPB          call tce_string_x2(d_t2,k_t2_offset,0.10d0,irrep_t,xnorm)
+CNPB          if(nodezero) write(6,*)'-------------------------------------'
+CNPBc
+      if(nodezero) then
+c yaml enerep_tce - coulomb_repulsion
+       write(6,*)'enrep_tce = ',enrep_tce
+c yaml red - this is hf_energy
+       write(6,6888) ref
+c yaml scf_energy_offset
+       write(6,6889) 0.0d0
+       write(6,*)'ALL OCCUPIED ORBITALS ARE ACTIVE IN DUCC --> NO SHIFT'
+       write(6,*)'Number of active orbitals',nactv+(nos/2)
+       write(6,*)'Number of active alpha electrons',noas
+       write(6,*)'Number of active beta electrons',nobs
+c
+      call util_flush(6)
+      endif 
+c -------------------
+         if(nodezero) then
+          write(6,*)' nos ',nos
+          write(6,*)' nvs ',nvs
+          write(6,*)'noas ',noas
+          write(6,*)'nobs ',nobs
+          write(6,*)'nvas ',nvas
+          write(6,*)'nvbs ',nvbs
+          write(6,*)'nactv ',nactv
+          call util_flush(6)
+         endif
+c -------------------
+        if (.not.MA_PUSH_GET(mt_int,nos+nvs,'transform',
+     1      l_transf,k_transf))
+     1      call errquit('transform',100,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_int,(nos+nvs)**2,'act1',
+     1      l_act1,k_act1))
+     1      call errquit('act1',101,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_int,(nos+nvs)**2,'prt1',
+     1      l_prt1,k_prt1))
+     1      call errquit('transform',102,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_byte,(nos+nvs)**4,'act2',
+     1      l_act2,k_act2))
+     1      call errquit('act2',103,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_byte,(nos+nvs)**4,'prt2',
+     1      l_prt2,k_prt2))
+     1      call errquit('prt2',104,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**2,'h',
+     1      l_h,k_h))
+     1      call errquit('h',200,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,((nos+nvs)/2)**2,'horb',
+     1      l_horb,k_horb))
+     1      call errquit('horb',201,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**4,'v',
+     1      l_v,k_v))
+     1      call errquit('v',202,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,nos*(nos+nvs),'t1',
+     1      l_t1,k_t1))
+     1      call errquit('t1',203,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos*nvs)**2,'t2',
+     1      l_t2,k_t2))
+     1      call errquit('t2',204,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**2,'ht',
+     1      l_ht,k_ht))
+     1      call errquit('ht',205,MA_ERR)
+        if (.not.MA_PUSH_GET(mt_dbl,(nos+nvs)**4,'vt',
+     1      l_vt,k_vt))
+     1      call errquit('vt',206,MA_ERR)
+c -------------------
+           call ducc(rtdb,d_t1,k_t1_offset,d_t2,k_t2_offset,
+     &    d_v2copy,k_v2copy_offset,dbl_mb(k_evl_sorted),
+     &    nos,nvs,noas,nobs,nvas,nvbs,nactv,
+     D        int_mb(k_transf),int_mb(k_act1),int_mb(k_prt1),
+     D        byte_mb(k_act2),byte_mb(k_prt2),
+     D        dbl_mb(k_h),dbl_mb(k_horb),dbl_mb(k_v),
+     D        dbl_mb(k_t1),dbl_mb(k_t2),
+     D        dbl_mb(k_ht),dbl_mb(k_vt))
+              if (.not.ma_chop_stack(l_transf))
+     1        call errquit('tce_energy: chopstack ducc',4,MA_ERR)
+          endif ! qducc
+c end of Tsource
+c
+c
+c
+c
+c
             call tce_diis_tidy()
             if (save_t(1)) then
               if(nodezero) then
@@ -3548,11 +4044,26 @@ c
           call deletefile(d_r2)
           call deletefile(d_r1)
           call deletefile(d_e)
+c
+c delete d_lambda related objects: ucc4
+c
+            if(ucc4) then
+              call deletefile(d_lambda2)
+              if (.not.ma_pop_stack(l_l2_offset))
+     1        call errquit("tce_energy: l2_offset ucc4",4,MA_ERR)
+            endif
+c
           if (nodezero) call util_flush(LuOut)
         enddo
         call errquit('tce_energy: maxiter exceeded',iter,CALC_ERR)
 
  2327 continue
+c Tsource
+      if(intorb) then
+         d_v2=d_v2copy
+         k_v2_offset=k_v2copy_offset
+      endif !qducc
+c Tsource 
 ! -------------
 ! CCSDT   left
 ! -------------
@@ -10321,12 +10832,18 @@ c
       if (io_v2.eq.IOSF) then
         call deletefile_sf(d_v2)
       else
+! 
 ! === jaguar ===
         if(.not.read_in3) then
          call deletefile(d_v2)
         end if
 ! ==============
       endif
+c
+      if(intorb.and.(model.eq.'ccsdt')) then 
+       call deletefile(d_v2aux)
+      endif
+c
       if (left) then
         if (multipole.gt.2) then
           do axis=10,1,-1
@@ -10478,6 +10995,10 @@ c
      1    call errquit("tce_energy: MA problem",1,MA_ERR)
       endif
       if(intorb) then
+       if(intorb.and.(model.eq.'ccsdt')) then 
+        if(.not.ma_pop_stack(l_v2aux_offset))
+     1   call errquit("tce_energy: MA problem",2,MA_ERR)
+       endif
 ! === jaguar ===
        if(.not.read_in3) then ! --- read_in3
 ! ==============

@@ -1,5 +1,3 @@
-
-
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 c copy from machine generated data statements inside pars.f
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -19,7 +17,6 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       logical special
 
       !include 'pars.f'
-
       real*8 pars( 161925)
       nlines=  32385
       pars(      1:    100)=(/
@@ -35848,4 +35845,3 @@ c read file
       enddo
       endif
       end subroutine nwpwxc_copyc6
-c $Id$

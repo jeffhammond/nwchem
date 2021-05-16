@@ -104,15 +104,23 @@ endif
 ifeq ($(_FC),xlf)
   LIB_DEFINES += -DTRPMIXP_OFF
 endif
-HAVE_SET_GA_PROPERTY = $(shell cat ${NWCHEM_TOP}/src/tools/build/global/src/ga-wapi.h | awk ' /wnga_set_property/ {print "Y"}')
+HAVE_SET_GA_PROPERTY_DISABLES = $(shell cat ${NWCHEM_TOP}/src/tools/build/global/src/ga-wapi.h | awk ' /wnga_set_property/ {print "Y"}')
 ifeq ($(HAVE_SET_GA_PROPERTY),Y)
       LIB_DEFINES += -DHAVE_SET_GA_PROPERTY
+endif
+
+ifdef USE_OPENACC_TRPDRV
+  OBJ_OPTIMIZE += ccsd_trpdrv_openacc.o
+  USES_BLAS    += ccsd_trpdrv_openacc.F
+  FOPTIONS += -acc -gpu=managed -cuda -cudalib=cublas
 endif
 
 
 ifeq ($(ARMCI_NETWORK),MPI-PR)
    LIB_DEFINES += -DACC_STRIPS
 endif
+
+   LIB_DEFINES +=-DUSE_F90INTERFACE
 
  LIBRARY = libccsd.a
 
