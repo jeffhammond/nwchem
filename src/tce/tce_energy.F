@@ -833,7 +833,7 @@ c
 !
        if (.not.rtdb_get(rtdb,'tce:nts',mt_log,1,res_log)) 
      c      res_log=.true.
-       if(res_log) ccsd_var='ic'
+       if(res_log.and.(ccsd_var.eq.'none')) ccsd_var='ic'
 !
        slice=.false.
        if (rtdb_get(rtdb,'tce:xmem',mt_int,1,xmem))slice=.true. 
@@ -1888,7 +1888,7 @@ c
          end if
 ! ==============
          if(model.ne.'ccsd_act') then
-            write(6,*) ' chop v2 '
+             if (nodezero) write(6,*) ' chop v2 '
           call  tce_mo2e_zones_4a_disk_ga_chop_N5(rtdb,d_v2,
      1                                  kax_v2_alpha_offset,size_2e)
          else 

@@ -29,6 +29,10 @@ c     References:
 c     J. Sun, A. Ruzsinszky, J.P. Perdew
 c     PRL 115, 036402 (2015)
 c     DOI: 10.1103/PhysRevLett.115036402
+c
+c     A.P. Bartok and J.R. Yates
+c     JCP 150, 161101 (2019)
+c     DOI: 10.1063/1.5094646
 
       Subroutine xc_cscan(whichfc, tol_rho, cfac, rho, delrho, Amat, 
      &                    Cmat, nq, ipol, Ec, qwght, ldew, func,
@@ -265,7 +269,7 @@ c
            regalpha = alpha
            dregalpha = 1d0
          else if (whichfc.eq.'regu') then
-           alpha = (tautot - tvw)/(tueg + 1d-4)
+           alpha = (tautot - tvw)/(tueg + 1d-4*ds)
            if (alpha.lt.0d0) alpha=0d0
            regalpha = alpha**3/(alpha**2 + 1d-3)
            dregalpha = alpha/(alpha**2 + 1d-3) * 
@@ -312,13 +316,13 @@ c
          if (ldew) func(n) = func(n) + cfac*ntot*(Ec1 + fca*(Ec0-Ec1))
 c
          if (whichfc.eq.'orig') then
-           dalphadn = F13*(F8*tvw - F5*tautot)/(tueg*ntot)
+           dalphadn = f53*(p/ds-alpha)/ntot
            dalphadg = -0.125d0/(tueg*ntot)
            dalphadt = 1d0/tueg
          else if (whichfc.eq.'regu') then
-           dalphadn = 5d0/3d0*(p-alpha)*tueg/((tueg+1d-4)*ntot)
-           dalphadg = -0.125d0/((tueg+1d-4)*ntot)
-           dalphadt = 1d0/(tueg+1d-4)
+           dalphadn = 5d0/3d0*(p/ds-alpha)*tueg/((tueg+1d-4*ds)*ntot)
+           dalphadg = -0.125d0/((tueg+1d-4*ds)*ntot)
+           dalphadt = 1d0/(tueg+1d-4*ds)
          endif
 
          dEc1dn = dEc1drs*drsdn + dEc1dp*dpdn
@@ -374,11 +378,7 @@ c
 
            ddsdzeta = 0.5d0*F53*(opz**F23 - omz**F23)
 
-           if (whichfc.eq.'orig') then
-             dalphadzeta = -alpha*ddsdzeta/ds
-           else
-             dalphadzeta = -alpha*ddsdzeta/ds * (tueg/(tueg+1d-4))
-           endif
+           dalphadzeta = -alpha*ddsdzeta/ds
 
            dfcadzeta = dfcada*dalphadzeta
 

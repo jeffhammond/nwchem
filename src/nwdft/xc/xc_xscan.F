@@ -28,6 +28,10 @@ c     References:
 c     J. Sun, A. Ruzsinszky, J.P. Perdew
 c     PRL 115, 036402 (2015)
 c     DOI: 10.1103/PhysRevLett.115036402
+c
+c     A.P. Bartok and J.R. Yates
+c     JCP 150, 161101 (2019)
+c     DOI: 10.1063/1.5094646
 
       Subroutine xc_xscan(whichfx, tol_rho, fac,  rho, delrho, 
      &                    Amat, Cmat, nq, ipol, Ex, 
@@ -287,7 +291,7 @@ c     functional derivatives FFFFFFFFFFFFFFFFFFFFFFFFFFFF
             if (whichfx.eq.'orig') then
               dadg = -F18*rrho/tauU
               dadt = 1d0/tauU
-              dadr = F13*(8d0*tauW - 5.0*tauN)*rrho/tauU
+              dadr = F53*(p-a)*rrho
             else if (whichfx.eq.'regu') then
               dadg = -F18*rrho/(tauU + 1d-4*facttwo**f53)
               dadt = 1d0/(tauU + 1d-4*facttwo**f53)

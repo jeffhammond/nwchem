@@ -1,6 +1,9 @@
 #!/bin/bash
 # source env. variables
- source $TRAVIS_BUILD_DIR/travis/nwchem.bashrc
+if [[ -z "$TRAVIS_BUILD_DIR" ]] ; then
+    TRAVIS_BUILD_DIR=$(pwd)
+fi
+source $TRAVIS_BUILD_DIR/travis/nwchem.bashrc
 if [[ ! -z "$TARBALL" ]]; then
     cd $TRAVIS_BUILD_DIR/..
     pwd
@@ -14,10 +17,8 @@ fi
  ls -lrt $TRAVIS_BUILD_DIR|tail -2
  cd $TRAVIS_BUILD_DIR/src
      make nwchem_config
-if [[ -z "$TARBALL" ]]; then
- if [[ "$USE_64TO32" == "y" ]]; then
+if [[ ! -z "$USE_64TO32"  ]]; then
      echo " CONVERSION 64_to_32"
-     make 64_to_32 >& 6log &
- fi
+     make 64_to_32
 fi
- env
+env

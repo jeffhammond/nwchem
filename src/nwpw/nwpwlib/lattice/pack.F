@@ -1881,6 +1881,9 @@ c     if (np.gt.1) call D3dB_SumAll(sum)
 *     *					*
 *     ***********************************
 
+*     shared output variable:
+*     - sum
+*
       subroutine Pack_cc_dot(nb,A,B,sum)
       implicit none
       integer    nb
@@ -2162,6 +2165,36 @@ c      sum = sum + 2*ddot(nidb(nb),A(nida(nb)+1),1,B(nida(nb)+1),1)
       return
       end
 
+*     ***********************************
+*     *					*
+*     *	         Pack_c_addrand		*	
+*     *					*
+*     ***********************************
+      subroutine Pack_c_addrand(nb,alpha,B)
+      implicit none
+      integer nb
+      real*8 alpha
+      complex*16 B(*)
+
+*     **** common block for pack ****
+      integer nida(0:3),nidb(0:3)
+      integer pack(2,0:3)
+      common / pack_blk / pack,nida,nidb
+
+      integer i
+      real*8   util_random
+      external util_random
+
+!$OMP DO
+      do i=1,(nida(nb)+nidb(nb))
+         B(i) = B(i) 
+     >        + alpha*dcmplx(0.5d0-util_random(0),0.5d0-util_random(0))
+      end do
+!$OMP END DO
+
+      return
+      end
+
 
 *     ***********************************
 *     *                                 *
@@ -2184,7 +2217,7 @@ c      sum = sum + 2*ddot(nidb(nb),A(nida(nb)+1),1,B(nida(nb)+1),1)
 
 c      call dcopy(2*(nida(nb)+nidb(nb)),A,1,B,1)
 !$OMP DO
-      do i=1,2*(nida(nb)+nidb(nb))
+      do i=1,(nida(nb)+nidb(nb))
          B(i) = dcmplx(A(i),0.0d0)
       end do
 !$OMP END DO
@@ -2212,7 +2245,7 @@ c      call dcopy(2*(nida(nb)+nidb(nb)),A,1,B,1)
       integer i
 
 !$OMP DO
-      do i=1,2*(nida(nb)+nidb(nb))
+      do i=1,(nida(nb)+nidb(nb))
          B(i) = dble(A(i))
       end do
 !$OMP END DO
@@ -3655,6 +3688,35 @@ c     **** three derivatives ****
 
 
 
+
+*     ***********************************
+*     *                                 *
+*     *          Pack_t_dscal1          *
+*     *                                 *
+*     ***********************************
+
+      subroutine Pack_t_dsca1l(nb,alpha,A)
+      implicit none
+      integer    nb
+      real*8     alpha,A(*)
+
+
+*     **** common block for pack ****
+      integer nida(0:3),nidb(0:3)
+      integer pack(2,0:3)
+      common / pack_blk / pack,nida,nidb
+
+*     **** local variables ****
+      integer i
+
+!$OMP DO
+      do i=1,(nida(nb)+nidb(nb))
+       A(i) = alpha*A(i)
+      end do
+!$OMP END DO
+
+      return
+      end
 
 
 *     ***********************************

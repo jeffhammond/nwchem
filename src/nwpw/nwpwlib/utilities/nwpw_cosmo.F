@@ -138,7 +138,21 @@ c
                qthresh = 0.5d-11
             end if
          end if
+
+*        **** set qalpha ****
+         if (.not.btdb_get(rtdb,'nwpw_cosmo:qalpha',
+     >                   mt_dbl,1,qalpha)) then
+            qalpha = 1.0d0
+         end if
+         old_qerror = 10.0d0
   
+
+*        **** set fix_q and use_fix_q ****
+         fix_q = .false.
+         if (.not.btdb_get(rtdb,'nwpw_cosmo:use_fix_q',
+     >                   mt_log,1,use_fix_q)) then
+            use_fix_q = .true.
+         end if
 
          Qt=.true.
          Qion = 0.0d0
@@ -483,10 +497,47 @@ c     == Clean up cosmo stuff, if necessary ==
 #include "bafdecls.fh"
 #include "nwpw_cosmo.fh"
 
-      call Parallel_shared_vector_zero(.true.,nefc,dbl_mb(qold(1)))
+!$OMP MASTER
       Qt = .true.
+!$OMP END MASTER
+      call Parallel_shared_vector_zero(.true.,nefc,dbl_mb(qold(1)))
       return
       end 
+
+
+*     *******************************************
+*     *                                         *
+*     *            nwpw_cosmo_fix_q             *
+*     *                                         *
+*     *******************************************
+      subroutine  nwpw_cosmo_fix_q()
+      implicit none
+
+#include "bafdecls.fh"
+#include "nwpw_cosmo.fh"
+
+!$OMP MASTER
+      if (use_fix_q) fix_q = .true.
+!$OMP END MASTER
+      return
+      end
+
+*     *******************************************
+*     *                                         *
+*     *            nwpw_cosmo_relax_q           *
+*     *                                         *
+*     *******************************************
+      subroutine  nwpw_cosmo_relax_q()
+      implicit none
+
+#include "bafdecls.fh"
+#include "nwpw_cosmo.fh"
+
+!$OMP MASTER
+      if (use_fix_q) fix_q = .false.
+!$OMP END MASTER
+      return
+      end
 
 
 *     *******************************************
@@ -754,15 +805,16 @@ c     == Clean up cosmo stuff, if necessary ==
             r= dsqrt(x*x + y*y + z*z)
             if (r.gt.1.0d-6) then
                v =  qi*qj/r**3
-               fx = fx - (x*v)
-               fy = fy - (y*v)
-               fz = fz - (z*v)
+               fx = fx + (x*v)
+               fy = fy + (y*v)
+               fz = fz + (z*v)
             end if
          end do
-         fion(1,j) = fion(1,j) + fx
-         fion(2,j) = fion(2,j) + fy
-         fion(3,j) = fion(3,j) + fz
+         fion(1,j) = fion(1,j) - fx
+         fion(2,j) = fion(2,j) - fy
+         fion(3,j) = fion(3,j) - fz
       end do
+!$OMP BARRIER
 
       return
       end
@@ -886,6 +938,7 @@ c     == Clean up cosmo stuff, if necessary ==
             rq(j) = rq(j) - alpha*q(i)/r
          end if
       end do
+!$OMP BARRIER
       call Parallel_Vector_SumAll(nefc,rq)
 
       !do i=1,nefc
@@ -939,6 +992,7 @@ c     == Clean up cosmo stuff, if necessary ==
             Aq(j) = Aq(j) + q(i)/r
          end if
       end do
+!$OMP BARRIER
       call Parallel_Vector_SumAll(nefc,Aq)
 
       return
@@ -969,8 +1023,9 @@ c     == Clean up cosmo stuff, if necessary ==
       external psp_zv
 
 
-      !write(*,*) "nwpw_cosmo_solve_q Qt,Qlmd,Qset=",Qt,Qlmd,Qset
-      if (Qt.and.Qt0) then
+      !write(*,*) "nwpw_cosmo_solve_q Qt,Qlmd,Qset=",Qt,Qlmd,Qset,fix_q
+      if (Qt.and.Qt0.and.(.not.fix_q)) then
+!$OMP MASTER
          if ((dabs(Qion).lt.1.0d-6).or.(dabs(Qelc).lt.1.0d-6)) then
             call Dneall_ispin(ispin)
             call Dneall_ne(ne)
@@ -980,6 +1035,7 @@ c     == Clean up cosmo stuff, if necessary ==
               Qion = Qion + ion_natm(ia)*psp_zv(ia)
             end do
          end if
+!$OMP END MASTER
       
          !**** really simple solver to start ****
          qcoord_ptr = ion_rion_ptr()+3*ion_nion()
@@ -990,14 +1046,20 @@ c     == Clean up cosmo stuff, if necessary ==
      >                 (0.0d0),
      >                 dbl_mb(qc0(1)),nefc)
 
-!$OMP MASTER
+
          qsum2 = 0.0d0
          do it=1,nefc
             qsum2 = qsum2+(dbl_mb(qc0(1)+it-1)-dbl_mb(qold(1)+it-1))**2
          end do
          error = dsqrt(qsum2)/dble(nefc)
+!$OMP MASTER
          if ((qthresh.gt.0.0).and.(error.lt.qthresh)) Qt = .false.
+c         write(*,*) "nwpw_cosmo_solve_q qthresh,error=",
+c     >              qthresh,error
+         old_qerror = error
 !$OMP END MASTER
+!$OMP BARRIER
+            
 
 
          call Parallel_shared_vector_copy(.true.,nefc,
@@ -1129,8 +1191,12 @@ c      write(*,*) "qBQ + qAq=",esum1+esum
 
       end if !** else Qt**
 
-      firstrestart = .false.
 
+!$OMP MASTER
+      firstrestart = .false.
+!$OMP END MASTER
+
+!$OMP BARRIER
       return
       end
 
@@ -1198,18 +1264,107 @@ c      write(*,*) "qBQ + qAq=",esum1+esum
             dbl_mb(AA(1)+(j-1)+(i-1)*nefc) = 1.0d0/r
          end if
       end do
+!$OMP BARRIER
       call Parallel_Vector_SumAll(nefc*nefc,dbl_mb(AA(1)))
 
       call nwpw_matrix_invert(nefc,dbl_mb(AA(1)),nefc)
 
 !$OMP MASTER
+      invAsum = 0.0d0
       do i=1,nefc*nefc
          invAsum = invAsum + dbl_mb(AA(1)+i-1)
       end do
 !$OMP END MASTER
+!$OMP BARRIER
 
       return
       end
 
+*     *******************************************
+*     *                                         *
+*     *            nwpw_cosmo_print             *
+*     *                                         *
+*     *******************************************
+      subroutine nwpw_cosmo_print(iunit,egas,esol)
+      implicit none
+      integer iunit
+      real*8 egas,esol
+
+#include "nwpw_cosmo.fh"
+
+      if (do_cosmo_smd) then
+         write(iunit,819) 
+         if (dabs(egas).gt.0.d0) then
+            write(iunit,825) esol+gcds
+            write(iunit,826) gcds,gcds*27.2116d0*23.06d0
+            write(iunit,827) (esol-egas+gcds),
+     >                       (esol-egas+gcds)*27.2116d0*23.06d0
+         else
+             write(iunit,825) esol+gcds
+             write(iunit,826) gcds,gcds**27.2116d0*23.06d0
+         end if
+      else
+         write(iunit,911)
+         if (dabs(egas).gt.0.d0) then
+            write(iunit,912) egas
+            write(iunit,913) esol
+            write(iunit,914) (egas-esol),
+     >                       (egas-esol)*27.2116d0*23.06d0
+         else
+            write(iunit,915)
+            write(iunit,913) esol
+         endif
+      end if
+
+c
+c    Standard cosmo output
+c
+ 911  format(
+     $/5x,' COSMO solvation results',/,
+     $5x,' -----------------------')
+ 912  format(5x,' gas phase energy                 : ',e19.10)
+ 913  format(5x,' sol phase energy                 : ',e19.10)
+ 914  format(5x,' (electrostatic) solvation energy : ',e19.10,
+     $     ' (',f8.3,' kcal/mol)'                       )
+ 915  format('     skipped: no gas phase energy')
+c
+c     Custom cosmo-smd output
+c
+ 819  format(
+     $/5x,' COSMO-SMD solvation results',/,
+     $5x,' ---------------------------',/
+     $5x,' Reference for the SMD model:',/,
+     $5x,' Marenich, A. V.; Cramer, C. J.; Truhlar, D. G.',
+     $' J. Phys. Chem. B 2009, 113, 6378',/)
+c 820  format(1x,
+c     $'            internal energy in gas <Psi(g)|H|Psi(g)> = ',
+c     $ f22.12)
+c 821  format(1x,
+c     $'        internal energy in solvent <Psi(s)|H|Psi(s)> = ',
+c     $ f22.12)
+c 822  format(1x,
+c     $'                              delta internal energy  = ',
+c     $ f22.12,' (',f8.2,' kcal/mol)')
+c 823  format(1x,
+c     $'  total free energy in solvent <Psi(s)|H+V/2|Psi(s)> = ',
+c     $ f22.12)
+c 824  format(1x,
+c     $'polarization energy contribution <Psi(s)|V/2|Psi(s)> = ',
+c     $ f22.12,' (',f8.2,' kcal/mol)')
+
+ 825  format(5x,
+     $' total free energy in solvent including G(SMD-CDS) : ',
+     $ e19.10)
+ 826  format(5x,
+     $' G(SMD-CDS) energy contribution                    : ',
+     $ e19.10,
+     $     ' (',f9.3,' kcal/mol)')
+ 827  format(5x,
+     $' 1 M fixed-concentration free energy of solvation  : ',
+     $ e19.10,' (',f9.3,' kcal/mol)'                       )
+
+
+      return
+      end
 
 

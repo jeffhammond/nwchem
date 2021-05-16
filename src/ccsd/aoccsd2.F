@@ -16,6 +16,7 @@ c
       logical oconverged, occd, use_trpdrv_nb
       logical use_trpdrv_omp, use_trpdrv_bgp2
       logical use_trpdrv_omp_mp
+      logical use_trpdrv_openacc
       logical use_trpdrv_offload
 c
 #include "ccsd_len.fh"
@@ -126,6 +127,7 @@ c gradient
       integer nkpass0
       external ccsd_createg
       Logical Do_Z,ccsd_createg
+      integer nthrd_org,ccsd_omp_threads
 #ifdef USE_F90INTERFACE
       interface
       subroutine ccsd_iterdrv2(rtdb,basis,nsh,ncor,nocc,nvir,nact,nbf,
@@ -313,9 +315,19 @@ c     mem needed for x c sht2 (see pampt3)
 !
       if (.not.rtdb_get(rtdb,'ccsd:use_ccsd_omp',mt_log,1,use_ccsd_omp))
      &         use_ccsd_omp = .false. 
+      if (.not.rtdb_get(rtdb,'ccsd:ccsd_omp_threads',mt_int,1,
+     A     ccsd_omp_threads)) ccsd_omp_threads=0
+#if defined(USE_OPENMP)
+c hack to avoid problems with ompi 4 ucx on tahoma
+        if (use_ccsd_omp.and.ccsd_omp_threads.ne.0) then
+          nthrd_org= omp_get_max_threads()
+          call omp_set_num_threads(ccsd_omp_threads)
+       endif
+#endif
       if (ga_nodeid().eq.0) then
 #if defined(USE_OPENMP)
         if (use_ccsd_omp) then
+           write(6,*) ' nthrd_org ',nthrd_org
           write(6,33) omp_get_max_threads()
         else
           write(6,33) 1
@@ -343,6 +355,16 @@ c     mem needed for x c sht2 (see pampt3)
      &                  occd, oconverged, eccsdos, use_ccsd_omp)
 !     
       call ga_sync()
+#ifdef USE_OPENMP
+c hack to avoid problems with ompi 4 ucx on tahoma
+        if (use_ccsd_omp.and.ccsd_omp_threads.ne.0) then
+          call omp_set_num_threads(nthrd_org)
+          if (ga_nodeid().eq.0) then
+             write(6,*) 'OMP threads from now on is',
+     C            omp_get_max_threads()
+          endif
+       endif
+#endif
 !
          if (.not.ga_create(MT_DBL,lnov,lnov,'g_nt2',
      &      nvir,nvir,g_nt2))
@@ -696,6 +718,9 @@ C
       if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_omp_mp', mt_log, 1,
      1                   use_trpdrv_omp_mp))
      2    use_trpdrv_omp_mp=.false.
+      if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_openacc', mt_log, 1,
+     1                   use_trpdrv_openacc))
+     2    use_trpdrv_openacc=.false.
       if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_offload', mt_log, 1,
      1                   use_trpdrv_offload))
      2    use_trpdrv_offload=.false.
@@ -955,6 +980,31 @@ c
      $        dbl_mb(k_trp_Kka), dbl_mb(k_trp_Jij), dbl_mb(k_trp_Jkj),
      $        dbl_mb(k_trp_Kij), dbl_mb(k_trp_Kkj), dbl_mb(k_trp_Dja),
      $        dbl_mb(k_trp_Djka), dbl_mb(k_trp_Djia))
+c
+         else if (use_trpdrv_openacc) then
+#if defined(USE_OPENACC_TRPDRV)
+#ifndef USE_F90_ALLOCATABLE
+#error You must set USE_F90_ALLOCATABLE if USE_OPENACC_TRPDRV is set!
+#endif
+         if (iam.eq.0.and.oprint) then
+            write(luout,1808) nvpass,util_wallsec()
+            call util_flush(luout)
+         endif
+ 1808    format(' commencing triples evaluation - openacc version',i8,
+     I        ' at ',f20.2,' secs')
+         call ccsd_trpdrv_openacc(dbl_mb(k_t1),
+     $        f1n,f1t,f2n,f2t,f3n,f3t,f4n,f4t,
+     $        eorb,g_objo,g_objv,g_coul,g_exch,ncor,nocc,nvir,iprt,
+     $        empt(1),empt(2),oseg_lo,oseg_hi,kchunk,
+     $        dbl_mb(k_trp_Tij), dbl_mb(k_trp_Tkj), dbl_mb(k_trp_Tia),
+     $        dbl_mb(k_trp_Tka), dbl_mb(k_trp_Xia), dbl_mb(k_trp_Xka),
+     $        dbl_mb(k_trp_Jia), dbl_mb(k_trp_Jka), dbl_mb(k_trp_Kia),
+     $        dbl_mb(k_trp_Kka), dbl_mb(k_trp_Jij), dbl_mb(k_trp_Jkj),
+     $        dbl_mb(k_trp_Kij), dbl_mb(k_trp_Kkj), dbl_mb(k_trp_Dja),
+     $        dbl_mb(k_trp_Djka), dbl_mb(k_trp_Djia))
+#else
+         call errquit('aoccsd: trpdrv_openacc disabled ',0,0)
+#endif
 c
          elseif (use_trpdrv_omp_mp) then
 #ifndef TRPMIXP_OFF

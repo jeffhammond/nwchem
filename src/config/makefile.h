@@ -169,7 +169,12 @@ else
   ifeq ("$(wildcard ${GA_PATH}/bin/ga-config)","")
     LIBPATH = -L$(SRCDIR)/tools/install/lib
   else
+    ifneq ("$(wildcard ${NWCHEM_TOP}/src/ga_ldflags.txt)","")
+      GA_LDFLAGS= $(shell cat $(NWCHEM_TOP)/src/ga_ldflags.txt)
+    endif
+    ifeq ($(GA_LDFLAGS),)
     GA_LDFLAGS=  $(shell ${GA_PATH}/bin/ga-config --ldflags  )
+    endif
 #extract GA libs location from last word in GA_LDLFLAGS
     LIBPATH :=  $(word $(words ${GA_LDFLAGS}),${GA_LDFLAGS}) 
     ifdef EXTERNAL_GA_PATH
@@ -191,7 +196,12 @@ else
   ifeq ("$(wildcard ${GA_PATH}/bin/ga-config)","")
     INCPATH = -I$(SRCDIR)/tools/install/include
   else
-    GA_CPPFLAGS=  $(shell ${GA_PATH}/bin/ga-config --cppflags  )
+    ifneq ("$(wildcard ${NWCHEM_TOP}/src/ga_cppflags.txt)","")
+      GA_CPPFLAGS= $(shell cat $(NWCHEM_TOP)/src/ga_cppflags.txt)
+    endif
+    ifeq ($(GA_CPPFLAGS),)
+      GA_CPPFLAGS=  $(shell ${GA_PATH}/bin/ga-config --cppflags  )
+    endif
     INCPATH :=  $(word $(words ${GA_CPPFLAGS}),${GA_CPPFLAGS})
   ifdef EXTERNAL_GA_PATH
     INCPATH += -I$(shell $(NWCHEM_TOP)/src/tools/guess-mpidefs --mpi_include)
@@ -217,12 +227,37 @@ endif
 # their header files are needed for dependency analysis of
 # other NWChem modules
 ifdef BUILD_OPENBLAS
+  ifndef BLAS_SIZE
+    BLAS_SIZE=8
+  endif
+
 NW_CORE_SUBDIRS += libext
-      BLASOPT=-L$(NWCHEM_TOP)/src/libext/lib -lnwc_openblas
+#bail out if BLASOPT or LAPACK_LIB or BLAS_LIB are defined by user
+ifneq ($(or $(BLASOPT),$(LAPACK_LIB),$(BLAS_LIB)),)
+$(info     )
+$(info You must unset)
+$(info BLASOPT ,LAPACK_LIB and BLAS_LIB)
+$(info when using BUILD_OPENBLAS )
+$(info )
+$(error )
+endif
+      BLASOPT=-L$(NWCHEM_TOP)/src/libext/lib -lnwc_openblas -lpthread
       LAPACK_LIB=$(BLASOPT)      
+      BLAS_LIB=$(BLASOPT)
 endif      
 ifdef BUILD_SCALAPACK
 NW_CORE_SUBDIRS += libext
+      ifneq ($(or $(SCALAPACK),$(SCALAPACK_LIB)),)
+$(info     )
+$(info You must unset)
+$(info SCALAPACK  and SCALAPACK_LIB)
+$(info when using BUILD_SCALAPACK )
+$(info )
+$(error )
+endif
+  ifndef SCALAPACK_SIZE
+    SCALAPACK_SIZE=8
+  endif
       SCALAPACK=-L$(NWCHEM_TOP)/src/libext/lib -lnwc_scalapack
 endif      
 ifdef BUILD_MPICH
@@ -231,7 +266,7 @@ NW_CORE_SUBDIRS += libext
       MPI_INCLUDE = $(shell PATH=$(NWCHEM_TOP)/src/libext/bin:$(PATH) $(NWCHEM_TOP)/src/tools/guess-mpidefs --mpi_include)
       MPI_LIB     = $(shell PATH=$(NWCHEM_TOP)/src/libext/bin:$(PATH)  $(NWCHEM_TOP)/src/tools/guess-mpidefs --mpi_lib)
       LIBMPI      = $(shell PATH=$(NWCHEM_TOP)/src/libext/bin:$(PATH) $(NWCHEM_TOP)/src/tools/guess-mpidefs --libmpi)
-endif      
+endif
 ifndef EXTERNAL_GA_PATH
 NW_CORE_SUBDIRS += tools
 endif
@@ -1134,8 +1169,8 @@ ifeq ($(TARGET),MACX64)
      FC = gfortran
      _FC = gfortran
    endif
-   ifeq ($(FC),$(findstring $(FC),gfortran gfortran-4 gfortran-5 gfortran-6 gfortran-7 gfortran-8 gfortran-9 gfortran-10 gfortran-11 gfortran-12))
-     _FC = gfortran
+   ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(FC)),gfortran)
+     _FC := gfortran
    endif
 #
 # MacOSX 64bit
@@ -1180,7 +1215,8 @@ endif
        DEFINES   += -DGFORTRAN -DGCC4
 #
          FOPTIMIZE+= -funroll-all-loops -mtune=native 
-         FVECTORIZE=-O3 -ffast-math -mtune=native -mfpmath=sse -msse3 -ftree-vectorize -ftree-vectorizer-verbose=1   -fprefetch-loop-arrays  -funroll-all-loops 
+         #FVECTORIZE=-O3 -ffast-math -mtune=native -mfpmath=sse -msse3 -ftree-vectorize -ftree-vectorizer-verbose=1   -fprefetch-loop-arrays  -funroll-all-loops
+         FVECTORIZE=-O3 -ffast-math -mtune=native -ftree-vectorize -ftree-vectorizer-verbose=1 -funroll-all-loops
         GNUMAJOR=$(shell $(_FC) -dM -E - < /dev/null 2> /dev/null | grep __GNUC__ |cut -c18-)
 	ifneq ($(strip $(GNUMAJOR)),)
         GNUMINOR=$(shell $(_FC) -dM -E - < /dev/null 2> /dev/null | egrep __GNUC_MINOR | cut -c24)
@@ -1323,13 +1359,21 @@ ifeq ($(TARGET),$(findstring $(TARGET),LINUX CYGNUS CYGWIN))
      FC = gfortran
      _FC = gfortran
    endif
-   ifeq ($(FC),$(findstring $(FC),gfortran gfortran-4 gfortran-5 gfortran-6 gfortran-7 gfortran-8 gfortran-9 gfortran-10 gfortran-11 gfortran-12 i686-w64-mingw32.static-gfortran))
+   ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(FC)),gfortran)
+     _FC := gfortran
+   endif
+   ifeq ($(FC),$(findstring $(FC),i686-w64-mingw32.static-gfortran))
      _FC = gfortran
    endif
-   ifeq ($(CC),$(findstring $(CC),gcc gcc-4 gcc-5 gcc-6 gcc-7 gcc-8 gcc-9 gcc-10 gcc-11 gcc-12 i686-w64-mingw32.static-gcc))
-   ifneq ($(CC),cc)
-     _CC = gcc
+   ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(CC)),gcc)
+     ifneq ($(CC),cc)
+       _CC = gcc
+     endif
    endif
+   ifeq ($(CC),$(findstring $(CC),i686-w64-mingw32.static-gcc))
+     ifneq ($(CC),cc)
+       _CC = gcc
+     endif
    endif
 
          LINUXCPU = $(shell uname -m |\
@@ -1688,11 +1732,17 @@ endif
       ifeq ($(CC),pgcc)
         _CC=pgcc
       endif
+      ifeq ($(CC),nvcc)
+        _CC=pgcc
+      endif
       ifeq ($(CC),icc)
         _CC=icc
       endif
       ifeq ($(FC),pgf90)
         _FC=pgf90
+      endif
+      ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(FC)),nvfortran)
+        _FC := pgf90
       endif
       ifeq ($(FC),pgf77)
         _FC=pgf90
@@ -1706,22 +1756,27 @@ endif
       ifeq ($(FC),ifx)
        _FC=ifx
       endif
-     ifeq ($(FC),$(findstring $(FC),gfortran gfortran-4 gfortran-5 gfortran6 gfortran-6 gfortran-7 gfortran7 gfortran-8 gfortran8 gfortran-9 gfortran9 gfortran-10 gfortran10 gfortran-11 gfortran-12 i686-w64-mingw32.static-gfortran x86_64-w64-mingw32-gfortran-win32))
-       _FC= gfortran
-     endif
-     ifeq ($(CC),$(findstring $(CC),gcc gcc-4 gcc-5 gcc6 gcc-6 gcc-7 gcc7 gcc-8 gcc8 gcc-9 gcc9 gcc-10 gcc10 gcc-11 gcc-12 i686-w64-mingw32.static-gcc x86_64-w64-mingw32-gcc-win32))
-     ifneq ($(CC),cc)
-       _CC= gcc
-     endif
-     endif
-      ifeq ($(FC),gfortran)
-       _FC=gfortran
+      ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(FC)),gfortran)
+        _FC := gfortran
+      endif
+      ifeq ($(FC),$(findstring $(FC),i686-w64-mingw32.static-gfortran x86_64-w64-mingw32-gfortran-win32))
+        _FC := gfortran
+      endif
+      ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(CC)),gcc)
+	ifneq ($(CC),cc)
+          _CC := gcc
+        endif
+      endif
+      ifeq ($(CC),$(findstring $(CC),i686-w64-mingw32.static-gcc x86_64-w64-mingw32-gcc-win32))
+        ifneq ($(CC),cc)
+          _CC= gcc
+        endif
       endif
       ifeq ($(FC),armflang)
        _FC=armflang
        USE_FLANG=1
       endif
-      ifeq ($(FC),flang)
+      ifeq ($(shell $(CNFDIR)/strip_compiler.sh $(FC)),flang)
        _FC=gfortran
        USE_FLANG=1
       endif
@@ -1751,6 +1806,13 @@ endif
          FOPTIONS   = -mabi=64
          FFLAGS_FORGA   = -mabi=64
          CFLAGS_FORGA   = -mabi=64
+       endif
+       ifeq ($(_CPU),riscv64)
+         DONTHAVEM64OPT=Y
+         COPTIONS   =  -march=rv64gc -mabi=lp64d
+         FOPTIONS   =  -march=rv64gc -mabi=lp64d
+         FFLAGS_FORGA   = -march=rv64gc -mabi=lp64d
+         CFLAGS_FORGA   = -march=rv64gc -mabi=lp64d
        endif
       ifeq ($(_CC),gcc)
        ifneq ($(DONTHAVEM64OPT),Y)
@@ -1804,8 +1866,8 @@ endif
         ifeq ($(GNU_GE_4_8),true)
           ifeq ($(_CPU),ppc64le)
           FDEBUG =-O0 -g 
-          else
-          FDEBUG =-O2 -g 
+#          else
+#          FDEBUG =-O2 -g
           endif
           FDEBUG +=-fno-aggressive-loop-optimizations
           FOPTIMIZE +=-fno-aggressive-loop-optimizations
@@ -2003,7 +2065,8 @@ endif
        FOPTIMIZE = -O3  -unroll
        FOPTIMIZE += -ip
        FOPTIONS += -align -fpp
-           CPP=fpp -P 
+# might be not need and the root cause for https://github.com/nwchemgit/nwchem/issues/255
+#           CPP=fpp -P
            ifeq ($(_IFCV15ORNEWER), Y)
 # fpp seems to get lost with ifort 15 in the offload bit
 # only use EXPLICITF for offload because otherwise we want debugging to be easy
@@ -2109,17 +2172,6 @@ endif
      endif # _FC = ifort (i think)
 #
       ifeq ($(_FC),pgf90)
-        FOPTIONS   += -Mdalign -Mllalign -Kieee 
-#        FOPTIONS   += -tp k8-64  
-#        FOPTIONS   +=    -Ktrap=fp
-        FOPTIMIZE   = -O3 -fastsse -Mnounroll -Minfo=loop -Mipa=fast
-        FVECTORIZE   = -fast  -fastsse  -O3   -Mipa=fast
-        FDEBUG = -g -O2
-        DEFINES  += -DCHKUNDFLW -DPGLINUX
-        ifdef USE_OPENMP
-           FOPTIONS  += -mp -Minfo=mp
-           LDOPTIONS += -mp
-        endif
        ifeq ($(FC),ftn)
           LINK.f = ftn  $(LDFLAGS) $(FOPTIONS)
        endif
@@ -2241,7 +2293,15 @@ endif
              endif
         endif
 
-        FDEBUG += -g -O 
+        ifeq ($(FC),flang)
+#AOMP flang crashes with -g in source using block data
+        FDEBUG =  -O
+	  else
+        FDEBUG += -g -O0
+        ifeq ($(GNU_GE_4_8),true)
+          FDEBUG +=-fno-aggressive-loop-optimizations
+	endif
+	endif
         ifdef USE_F2C
 #possible segv with use of zdotc (e.g. with GOTO BLAS)
 #http://gcc.gnu.org/bugzilla/show_bug.cgi?id=20178
@@ -2249,7 +2309,8 @@ endif
         endif
         ifeq ($(GNU_GE_4_6),true) 
           FOPTIMIZE +=  -mtune=native
-          FOPTIONS += -finline-functions
+# causes slowdows in mp2/ccsd
+#          FOPTIONS += -finline-functions
         endif
 #        FVECTORIZE  += -ftree-vectorize -ftree-vectorizer-verbose=1
        ifdef  USE_FPE
@@ -2285,6 +2346,13 @@ ifeq ($(_CPU),$(findstring $(_CPU),aarch64))
     endif
   endif
 
+  ifeq ($(_CC),armclang)
+    COPTIONS += -O3 -funroll-loops -mcpu=native -armpl
+    ifdef USE_OPENMP
+      COPTIONS += -fopenmp
+    endif
+  endif
+
   ifeq ($(_FC),gfortran)
     ifdef  USE_GPROF
       FOPTIONS += -pg
@@ -2305,11 +2373,12 @@ ifeq ($(_CPU),$(findstring $(_CPU),aarch64))
       FOPTIMIZE  += -ftree-vectorize   -fopt-info-vec
     endif
 
-    FDEBUG += -g -O 
+    FDEBUG += -g -O
 
     ifeq ($(GNU_GE_4_6),true) 
       FOPTIMIZE +=  -mtune=native
-      FOPTIONS += -finline-functions
+# causes slowdows in mp2/ccsd
+#      FOPTIONS += -finline-functions
     endif
     ifndef USE_FPE
       FOPTIMIZE  += -ffast-math #2nd time
@@ -2327,13 +2396,13 @@ ifeq ($(_CPU),$(findstring $(_CPU),aarch64))
 
     DEFINES   +=   -DARMFLANG
     LINK.f = $(FC)  $(LDFLAGS) 
-    FOPTIMIZE  = -O3 -Mfma -ffp-contract=fast
+    FOPTIMIZE  = -O3 -Mfma -ffp-contract=fast -fno-backslash
     ifeq ($(V),1)
     $(info     ARMFLANG FOPTIMIZE = ${FOPTIMIZE})
     endif
 
     FDEBUG += -g -O 
-    FOPTIMIZE +=  -mtune=native
+    FOPTIMIZE +=  -mtune=native -armpl
 
     ifndef USE_FPE
       FOPTIMIZE  += -ffast-math #2nd time
@@ -2400,8 +2469,12 @@ ifeq ($(_CPU),$(findstring $(_CPU), ppc64 ppc64le))
 #     EXTRA_LIBS +=  -dynamic-linker /lib64/ld64.so.1 -melf64ppc -lxlf90_r -lxlopt -lxlomp_ser -lxl -lxlfmath -ldl -lm -lc -lgcc -lm
     endif # end of ppc64 arch
       ifeq ($(_FC),pgf90)
+        FOPTIONS   += -Mdalign -Kieee
+        ifeq ($(_CPU),x86_64)
+          FOPTIONS   +=  -Mllalign
+	endif
+	FOPTIONS   += -Mbackslash
         FOPTIONS   += -Mcache_align  # -Kieee 
-#        FOPTIMIZE   = -O3  -Mnounroll -Minfo=loop -Mipa=fast
         FOPTIMIZE   =  -fast -O3 -Mvect=simd  -Munroll -Minfo=loop # -Mipa=fast
         FVECTORIZE   = -fast    -O3   #-Mipa=fast
         FDEBUG = -g -O2
@@ -2599,12 +2672,12 @@ else
   GOTPYTHON2 := $(shell command -v python2 2> /dev/null)
   GOTPYTHON  := $(shell command -v python 2> /dev/null)
   ifdef GOTPYTHON3
-    PYTHONVERSION=$(shell python3 -V 2>&1 |cut -c 8-10)
+    PYTHONVERSION=$(shell python3 -c 'import sys; print("{}.{}".format(sys.version_info.major, sys.version_info.minor))')
   else ifdef GOTPYTHON2
-    PYTHONVERSION=$(shell python2 -V 2>&1 |cut -c 8-10)
+    PYTHONVERSION=$(shell python2 -c 'import sys; print("{}.{}".format(sys.version_info.major, sys.version_info.minor))')
   else ifdef GOTPYTHON
 #last try at python2
-    PYTHONVERSION=$(shell python -V 2>&1 |cut -c 8-10)
+    PYTHONVERSION=$(shell python -c 'import sys; print("{}.{}".format(sys.version_info.major, sys.version_info.minor))')
   else
 errorpython3:
 $(info )
@@ -2704,7 +2777,12 @@ endif
 #case guard against case when tools have not been compiled yet
   ifeq ("$(wildcard ${GA_PATH}/bin/ga-config)","")
   else
-_USE_SCALAPACK = $(shell ${GA_PATH}/bin/ga-config  --use_scalapack| awk ' /1/ {print "Y"}')
+ifneq ("$(wildcard ${NWCHEM_TOP}/src/ga_use_scalapack.txt)","")
+  _USE_SCALAPACK= $(shell cat $(NWCHEM_TOP)/src/ga_use_scalapack.txt)
+endif
+ifeq ($(_USE_SCALAPACK),)
+  _USE_SCALAPACK = $(shell ${GA_PATH}/bin/ga-config  --use_scalapack| awk ' /1/ {print "Y"}')
+endif
 endif
 
 ifeq ($(_USE_SCALAPACK),Y)
@@ -2747,6 +2825,10 @@ ifeq ($(BLASOPT),)
     CORE_LIBS +=  -lnwcblas 
 else
     CORE_LIBS += $(BLASOPT)
+endif
+
+ifdef NWCHEM_LINK_CUDA
+CORE_LIBS += -acc -gpu=managed -cuda -cudalib=cublas
 endif
 
 ifdef BLASOPT
@@ -2892,6 +2974,34 @@ endif
     EXTRA_LIBS += -L$(SIMINT_HOME)/lib -lnwc_simint
   endif
 endif
+ifdef USE_PLUMED
+  DEFINES += -DUSE_PLUMED
+#check presence of plumed command. TODO
+  GOTPLUMED  := $(shell command -v plumed 2> /dev/null)
+  ifndef GOTPLUMED
+        errorplumed0:
+$(info )
+$(info  PLUMED installation not found.)
+$(info  Please add to your PATH the directory where the plumed command is found )
+$(info )
+  endif
+  PLUMED_HOME = $(shell plumed info --configuration|egrep prefix=|head -1|cut -c 8-)
+  PLUMED_DYNAMIC_LIBS = $(shell plumed info --configuration|egrep DYNAMIC_LIBS| cut -c 14-)
+  PLUMED_HASMPI = $(plumed info --configuration|grep program_can_run_mpi|cut -c 21-21)
+  ifeq ($(PLUMED_HASMPI),y)
+    DEFINES += -DPLUMED_HASMPI
+  endif
+#PLUMED_LOAD= /home/edo/tahoma/apps/plumed262.intel20u2/lib/libplumed.a -ldl  -lstdc++ -lfftw3 -lz -ldl -llapack -lblas   -rdynamic -Wl,-Bsymbolic -fopenmp 
+  ifdef PLUMED_DYNAMIC_LIBS
+      EXTRA_LIBS += -L$(PLUMED_HOME)/lib -lplumed $(PLUMED_DYNAMIC_LIBS)
+  else
+        errorplumed:
+$(info )
+$(info  PLUMED info command not returning the expected output)
+$(info  Please file an issue at https://github.com/nwchemgit/nwchem/issues )
+$(info )
+  endif
+endif
 
 # CUDA
 ifndef CUDA
@@ -2963,6 +3073,28 @@ endif
 # machine-dependent 
 
 MKDIR = mkdir
+#extract defines to be used with linear algebra libraries
+      ifdef USE_INTERNALBLAS
+      DEFINES += -DINTERNALBLAS
+endif
+ifdef BUILD_OPENBLAS
+      DEFINES += -DOPENBLAS
+endif
+ifeq ($(shell echo $(BLASOPT) |awk '/openblas/ {print "Y"; exit}'),Y)
+      DEFINES += -DOPENBLAS
+endif
+ifeq ($(shell echo $(BLASOPT) |awk '/mkl/ {print "Y"; exit}'),Y)
+      DEFINES += -DMKL
+endif
+ifeq ($(shell echo $(BLASOPT) |awk '/blis/ {print "Y"; exit}'),Y)
+      DEFINES += -DBLIS
+endif
+ifeq ($(shell echo $(BLASOPT) |awk '/flexiblas/ {print "Y"; exit}'),Y)
+      DEFINES += -DFLEXIBLAS
+endif
+ifeq ($(shell echo $(BLASOPT) |awk '/Accelerate/ {print "Y"; exit}'),Y)
+      DEFINES += -DACCELERATE
+endif
 
 #
 # Define known suffixes mostly so that .p files don\'t cause pc to be invoked

@@ -512,6 +512,10 @@ c        call nwpwxc_print()
      >                  mt_int,1,scf_algorithm))
      >   scf_algorithm = 3
 
+      if (.not.btdb_get(rtdb,'nwpw:diis_histories',
+     >                  mt_int,1,diis_histories))
+     >   diis_histories = 15
+
       if (.not.btdb_get(rtdb,'nwpw:ks_algorithm',
      >                  mt_int,1,ks_algorithm))
      >   ks_algorithm = 0
@@ -767,6 +771,11 @@ c        call nwpwxc_print()
       if (.not.btdb_get(rtdb,'nwpw:scf_algorithm',
      >                  mt_int,1,scf_algorithm))
      >   scf_algorithm = 3
+
+      if (.not.btdb_get(rtdb,'nwpw:diis_histories',
+     >                  mt_int,1,diis_histories))
+     >   diis_histories = 15
+
       if (.not.btdb_get(rtdb,'nwpw:ks_algorithm',
      >                  mt_int,1,ks_algorithm))
      >   ks_algorithm = 0
@@ -1224,10 +1233,20 @@ c         return
      >                  mt_int,1,frac_smeartype)) then
          frac_smeartype = 0
       end if
+      if (.not. btdb_get(rtdb,'nwpw:fractional_alpha',
+     >                   mt_dbl,1,fractional_alpha)) then
+         fractional_alpha = 1.00d0
+      end if
 
 *     **** set attenuation parameter ****
       if (.not.btdb_get(rtdb,'nwpw:attenuation',mt_dbl,1,attenuation))
      >  attenuation = 0.5d0
+
+*     **** set preconditioning parameters Ep,Sp ****
+      if (.not.btdb_get(rtdb,'nwpw:Eprecondition',mt_dbl,1,Ep))
+     >   Ep = 20.0d0
+      if (.not.btdb_get(rtdb,'nwpw:Sprecondition',mt_dbl,1,Sp))
+     >   Sp = 200.0d0
 
 *     **** set out of time variables ****
       est_step_time   = -1
@@ -1293,7 +1312,7 @@ cccc set to some reasonable default !
             end do
          end if
       end if
-      pio = pio.and.(np_dimensions(2).gt.1)
+      pio = pio.and.((np_dimensions(2).gt.1).or.(np_dimensions(3).gt.1))
 
 *     **** minimizer ****
       if (.not.btdb_get(rtdb,'nwpw:minimizer',mt_int,1,minimizer)) then
@@ -2347,6 +2366,20 @@ c      write(*,*) "L3=",L3
 #include "control.fh"
 
       control_scf_algorithm = scf_algorithm
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *       control_diis_histories    *
+*     *                                 *
+*     ***********************************
+      integer function control_diis_histories()
+      implicit none
+
+#include "control.fh"
+
+      control_diis_histories = diis_histories
       return
       end
 
@@ -3808,6 +3841,43 @@ c     >               (ispin.eq.ispin_wf))
       return
       end
 
+*     **********************************
+*     *                                *
+*     *      control_fft_dos_grid      *
+*     *                                *
+*     **********************************
+      subroutine control_fft_dos_grid(grid)
+      implicit none
+      integer grid(3)
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+#include "errquit.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+*     **** local variables ****
+      character*50 zone_name
+      character*50 rtdb_name
+      integer l
+
+      if (.not.btdb_cget(rtdb,'band_fft:zone_name',
+     >                   1,zone_name))
+     >   zone_name = 'zone_fft_default'
+
+      l = index(zone_name,' ') -1
+      rtdb_name = zone_name(1:l)//':dos-grid'
+      if(.not.btdb_get(rtdb,rtdb_name,mt_int,3,grid)) then
+         grid(1) = 0
+         grid(2) = 0
+         grid(3) = 0
+      end if
+
+      return
+      end
+
 
 *     **********************************
 *     *                                *
@@ -4137,7 +4207,6 @@ c      end if
          
 
 
-
 *     ***************************
 *     *                	   	*
 *     *        control_Ep	*
@@ -4146,20 +4215,7 @@ c      end if
       real*8 function control_Ep()
       implicit none
 
-#include "bafdecls.fh"
-#include "btdb.fh"
-
-*     **** control_rtdb common block ****
-      integer rtdb
-      common / control_rtdb1 / rtdb
-
-      real*8 Ep
-
-      if (.not.btdb_get(rtdb,'nwpw:Eprecondition',
-     >                  mt_dbl,1,Ep)) 
-     >  then
-         Ep = 20.0d0
-      end if
+#include "control.fh"
 
       control_Ep = Ep
       return
@@ -4175,20 +4231,7 @@ c      end if
       real*8 function control_Sp()
       implicit none
 
-#include "bafdecls.fh"
-#include "btdb.fh"
-
-*     **** control_rtdb common block ****
-      integer rtdb
-      common / control_rtdb1 / rtdb
-
-      real*8 Sp
-      
-      if (.not.btdb_get(rtdb,'nwpw:Sprecondition',
-     >                  mt_dbl,1,Sp))
-     >  then
-         Sp = 200.0d0
-      end if
+#include "control.fh"
 
       control_Sp = Sp
       return
@@ -5667,6 +5710,33 @@ c      end if
 
 *     ***********************************
 *     *                                 *
+*     *       control_2x2ne_virtual     *
+*     *                                 *
+*     ***********************************
+      logical function control_2x2ne_virtual()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      logical value
+
+      value = .false.
+      if (.not.btdb_get(rtdb,'nwpw:2x2ne_virtual',mt_log,1,value))
+     >   value = .false.
+
+      control_2x2ne_virtual = value
+      return
+      end
+
+
+
+*     ***********************************
+*     *                                 *
 *     *       control_3x3_virtual       *
 *     *                                 *
 *     ***********************************
@@ -5737,6 +5807,8 @@ c      end if
       external control_2x2_virtual,control_3x3_virtual
       logical  control_4x4_virtual
       external control_4x4_virtual
+      logical  control_2x2ne_virtual
+      external control_2x2ne_virtual
       
       ivalue = 0
       if (.not.btdb_get(rtdb,'nwpw:CI_virtual',mt_int,1,ivalue)) then
@@ -5746,6 +5818,8 @@ c      end if
             ivalue = 3
          else if (control_4x4_virtual()) then
             ivalue = 4
+         else if (control_2x2ne_virtual()) then
+            ivalue = 5
          end if
       end if
       
@@ -7062,3 +7136,230 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       return
       end
 
+
+*     ***********************************
+*     *                                 *
+*     *        control_H1_it_in          *
+*     *                                 *
+*     ***********************************
+      integer function control_H1_it_in()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      integer it_in
+
+      if (.not.btdb_get(rtdb,'nwpw:H1_it_in',mt_int,1,it_in)) 
+     >   it_in = 50
+
+      control_H1_it_in = it_in
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *        control_H1_it_out        *
+*     *                                 *
+*     ***********************************
+      integer function control_H1_it_out()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      integer it_out
+
+      if (.not.btdb_get(rtdb,'nwpw:H1_it_out',mt_int,1,it_out)) 
+     >   it_out = 1
+
+      control_H1_it_out = it_out
+      return
+      end
+
+
+*     ***********************************
+*     *                                 *
+*     *      control_H1_it_ortho        *
+*     *                                 *
+*     ***********************************
+      integer function control_H1_it_ortho()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      integer it_ortho
+
+      if (.not.btdb_get(rtdb,'nwpw:H1_it_ortho',mt_int,1,it_ortho))
+     >   it_ortho = -1
+
+      control_H1_it_ortho = it_ortho
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *       control_CI_maxit_sweeps   *
+*     *                                 *
+*     ***********************************
+      integer function control_CI_maxit_sweeps()
+      implicit none
+      
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+      
+      integer it_out
+      
+      if (.not.btdb_get(rtdb,'nwpw:CI_maxit_sweeps',mt_int,1,it_out))
+     >   it_out = 3
+      
+      control_CI_maxit_sweeps = it_out
+      return
+      end
+
+
+*     ***********************************
+*     *                                 *
+*     *       control_CI_maxit_orb      *
+*     *                                 *
+*     ***********************************
+      integer function control_CI_maxit_orb()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      integer it_out
+
+      if (.not.btdb_get(rtdb,'nwpw:CI_maxit_orb',mt_int,1,it_out))
+     >   it_out = 120
+
+      control_CI_maxit_orb = it_out
+      return
+      end
+
+*     ***********************************
+*     *                                 *
+*     *   control_CI_maxit_linesearch   *
+*     *                                 *
+*     ***********************************
+      integer function control_CI_maxit_linesearch()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      integer it_out
+
+      if (.not.btdb_get(rtdb,'nwpw:CI_maxit_linesearch',
+     >                  mt_int,1,it_out))
+     >   it_out = 15
+
+      control_CI_maxit_linesearch = it_out
+      return
+      end
+
+
+*     ***********************************
+*     *                                 *
+*     *        control_use_director     *
+*     *                                 *
+*     ***********************************
+      logical function control_use_director()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      logical value
+
+      value = .true.
+      if (.not.btdb_get(rtdb,'nwpw:use_director',mt_log,1,value))
+     >   value = .false.
+
+      control_use_director = value
+      return
+      end
+
+
+*     ***********************************
+*     *                                 *
+*     *      control_unset_excited_ne   *
+*     *                                 *
+*     ***********************************
+      subroutine control_unset_excited_ne()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      logical value
+      integer ne(2)
+
+      ne(1) = 0
+      ne(2) = 0
+      value = btdb_put(rtdb,'nwpw:excited_ne',mt_int,2,ne)
+
+      !value = rtdb_delete(rtdb,'nwpw:excited_ne')
+
+      return
+      end
+
+
+*     ***********************************
+*     *                                 *
+*     *        control_Efield_on        *
+*     *                                 *
+*     ***********************************
+      logical function control_Efield_on()
+      implicit none
+
+#include "bafdecls.fh"
+#include "btdb.fh"
+
+*     **** control_rtdb common block ****
+      integer rtdb
+      common / control_rtdb1 / rtdb
+
+      logical value
+
+      value = .true.
+      if (.not.btdb_get(rtdb,'nwpw:efield',mt_log,1,value))
+     >   value = .false.
+
+      control_Efield_on = value
+      return
+      end

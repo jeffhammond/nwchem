@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 get_cmake38(){
 	UNAME_S=$(uname -s)
 	if [[ ${UNAME_S} == "Linux" ]] || [[ ${UNAME_S} == "Darwin" ]] && [[ $(uname -m) == "x86_64" ]] ; then
@@ -17,8 +17,19 @@ get_cmake38(){
 	fi
 
 }
+MPICC=mpicc
 if [[ "$FC" = "ftn"  ]] ; then
     MPIF90="ftn"
+    # ugly hack to get mpicc on cray
+    if [[  -z "${INTEL_PATH}" ]]; then
+	echo
+	echo Intel compilers not loaded
+	echo please execute "module load intel" for building Scalapack
+	echo
+	exit 1
+    else
+	MPICC=$INTEL_PATH/linux/mpi/intel64/bin/mpicc
+    fi
 else
     if ! [ -x "$(command -v mpif90)" ]; then
 	echo
@@ -43,7 +54,7 @@ if [[ -z "${CMAKE}" ]]; then
     if [[ -z "$(command -v cmake)" ]]; then
 	get_cmake38
 	status=$?
-	if [ $status ne 0 ]; then
+	if [ $status -ne 0 ]; then
 	    echo cmake required to build scalapack
 	    echo Please install cmake
 	    echo define the CMAKE env. variable
@@ -77,32 +88,49 @@ pwd
 #    exit 1
 #fi
 if [[ "$BLAS_SIZE" != "$SCALAPACK_SIZE"  ]] ; then
-    echo BLAS_SIZE must be the same as SCALAPACK_SIZE
+    echo "BLAS_SIZE must be the same as SCALAPACK_SIZE"
+    echo "BLAS_SIZE = " "$BLAS_SIZE"
+    echo "SCALAPACK_SIZE = " "$SCALAPACK_SIZE"
     exit 1
 fi
-if [[ -z "$USE_64TO32"   ]] ; then
-    echo USE_64TO32 must be set
+
+if [[  -z "${SCALAPACK_SIZE}" ]]; then
+   SCALAPACK_SIZE=8
+fi
+if [[ "$BLAS_SIZE" == 4 ]] && [[ -z "$USE_64TO32"   ]] ; then
+    if [[ "$NWCHEM_TARGET" != "LINUX" ]] && [[ "$NWCHEM_TARGET" != "MACX" ]] ; then
+    echo USE_64TO32 must be set when BLAS_SIZE=4 on 64-bit architectures
     exit 1
+    fi
 fi
 if [[ ! -z "$BUILD_OPENBLAS"   ]] ; then
-    BLASOPT="-L`pwd`/../lib -lopenblas"
+    BLASOPT="-L`pwd`/../lib -lnwc_openblas"
 fi
 #git clone https://github.com/scibuilder/scalapack.git
 #svn co --non-interactive --trust-server-cert https://icl.utk.edu/svn/scalapack-dev/scalapack/trunk/ scalapack
-rm -rf scalapack*
 VERSION=2.1.0
 #curl -L https://github.com/Reference-ScaLAPACK/scalapack/archive/v${VERSION}.tar.gz -o scalapack.tgz
 COMMIT=bc6cad585362aa58e05186bb85d4b619080c45a9
-rm -f scalapack-$COMMIT.zip
-curl -L https://github.com/Reference-ScaLAPACK/scalapack/archive/$COMMIT.zip -o scalapack-$COMMIT.zip
-unzip -q scalapack-$COMMIT.zip
+rm -rf scalapack 
+if [[ -f "scalapack-$COMMIT.zip" ]]; then
+    echo "using existing"  "scalapack-$COMMIT.zip"
+else
+    echo "downloading"  "scalapack-$COMMIT.zip"
+    rm -f scalapack-$COMMIT.zip
+    curl -L https://github.com/Reference-ScaLAPACK/scalapack/archive/$COMMIT.zip -o scalapack-$COMMIT.zip
+fi
+unzip -n -q scalapack-$COMMIT.zip
 ln -sf scalapack-$COMMIT scalapack
 #ln -sf scalapack-${VERSION} scalapack
 #curl -L http://www.netlib.org/scalapack/scalapack-${VERSION}.tgz -o scalapack.tgz
 #tar xzf scalapack.tgz
 cd scalapack
-if [[ ! -z "$USE_DCOMBSSQPATCH" ]]; then
-    patch -p0 < ../dcombssq.patch
+# macos accelerate does not contain dcombossq
+if [[ $(echo "$BLASOPT" |awk '/Accelerate/ {print "Y"; exit}' ) == "Y" ]]; then
+    export USE_DCOMBSSQ=1
+fi
+if [[  -z "$USE_DCOMBSSQ" ]]; then
+    patch -p0 -s -N < ../dcombssq.patch
 fi
 #curl -LJO https://github.com/Reference-ScaLAPACK/scalapack/commit/189c84001bcd564296a475c5c757afc9f337e828.patch
 #patch -p1 < 189c84001bcd564296a475c5c757afc9f337e828.patch
@@ -119,8 +147,15 @@ fi
 #if [[ ! -z "$BUILD_SCALAPACK"   ]] ; then
 #    Fortran_FLAGS+=-I"$NWCHEM_TOP"/src/libext/include
 #fi
+#fix for clang 12 error in implicit-function-declaration
+GOTCLANG=$( "$MPICC" -dM -E - </dev/null 2> /dev/null |grep __clang__|head -1|cut -c19)
+if [[ ${GOTCLANG} == "1" ]] ; then
+    C_FLAGS=" -Wno-error=implicit-function-declaration "
+fi
+echo "SCALAPACK_SIZE" is $SCALAPACK_SIZE
 if [[  "$SCALAPACK_SIZE" == 8 ]] ; then
-    if  [[ ${FC} == gfortran ]] ; then
+    GFORTRAN_EXTRA=$(echo $FC | cut -c 1-8)
+    if  [[ ${FC} == gfortran ]] || [[ ${FC} == f95 ]] || [[ ${GFORTRAN_EXTRA} == gfortran ]] ; then
     Fortran_FLAGS+=" -fdefault-integer-8 "
     elif  [[ ${FC} == xlf ]] || [[ ${FC} == xlf_r ]] || [[ ${FC} == xlf90 ]]|| [[ ${FC} == xlf90_r ]]; then
     Fortran_FLAGS=" -qintsize=8 -qextname "
@@ -129,7 +164,15 @@ if [[  "$SCALAPACK_SIZE" == 8 ]] ; then
     fi
     C_FLAGS+=" -DInt=long"
 fi
-CC=mpicc  FC=$MPIF90 CFLAGS="$C_FLAGS" FFLAGS="$Fortran_FLAGS" $CMAKE -Wno-dev ../ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS="$C_FLAGS"  -DCMAKE_Fortran_FLAGS="$Fortran_FLAGS" -DTEST_SCALAPACK=OFF  -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF  -DBLAS_openblas_LIBRARY="$BLASOPT"  -DBLAS_LIBRARIES="$BLASOPT"  -DLAPACK_openblas_LIBRARY="$BLASOPT"  -DLAPACK_LIBRARIES="$BLASOPT" 
+if [[ "$CRAY_CPU_TARGET" == "mic-knl" ]]; then
+    module swap craype-mic-knl craype-haswell
+    KNL_SWAP=1
+fi
+echo compiling with CC="$MPICC"  FC=$MPIF90 CFLAGS="$C_FLAGS" FFLAGS="$Fortran_FLAGS" $CMAKE -Wno-dev ../ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS="$C_FLAGS"  -DCMAKE_Fortran_FLAGS="$Fortran_FLAGS" -DTEST_SCALAPACK=OFF  -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF  -DBLAS_openblas_LIBRARY="$BLASOPT"  -DBLAS_LIBRARIES="$BLASOPT"  -DLAPACK_openblas_LIBRARY="$BLASOPT"  -DLAPACK_LIBRARIES="$BLASOPT"
+CC="$MPICC"  FC=$MPIF90 CFLAGS="$C_FLAGS" FFLAGS="$Fortran_FLAGS" $CMAKE -Wno-dev ../ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS="$C_FLAGS"  -DCMAKE_Fortran_FLAGS="$Fortran_FLAGS" -DTEST_SCALAPACK=OFF  -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF  -DBLAS_openblas_LIBRARY="$BLASOPT"  -DBLAS_LIBRARIES="$BLASOPT"  -DLAPACK_openblas_LIBRARY="$BLASOPT"  -DLAPACK_LIBRARIES="$BLASOPT"
 make V=0 -j3 scalapack/fast
 mkdir -p ../../../lib
 cp lib/libscalapack.a ../../../lib/libnwc_scalapack.a
+if [[ "$KNL_SWAP" == "1" ]]; then
+    module swap  craype-haswell craype-mic-knl
+fi

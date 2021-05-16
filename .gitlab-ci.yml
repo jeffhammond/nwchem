@@ -7,7 +7,6 @@ variables:
   USE_NOIO: 1
   NWCHEM_MODULES: "all python"
   OMP_NUM_THREADS: 1
-  USE_64TO32: Y
   NWCHEM_LONG_PATHS: Y
   GIT_CLEAN_FLAGS: -ffdx -e bin
   GIT_DEPTH: 32
@@ -42,7 +41,6 @@ variables:
     - cd $NWCHEM_TOP/src
     - rm -rf tools/ga-* ||true
     - make nwchem_config
-    - if [ "$NWCHEM_TARGET" != "LINUX" ]; then make 64_to_32; fi
     - make -j3
     - ../contrib/getmem.nwchem 
 #  except:
@@ -205,7 +203,7 @@ macos:build_gcc:
     SCALAPACK_SIZE: 8
     ARMCI_NETWORK: "SOCKETS"
     USE_DCOMBSSQPATCH: "Y"
-    PATH: "/usr/local/opt/python@3.8/bin:/opt/local/bin:/usr/local/bin/:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin"
+    PATH: "/usr/local/opt/python@3.9/bin:/opt/local/bin:/usr/local/bin/:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin"
   tags:
     - macos_10.13
 
@@ -245,7 +243,7 @@ macos:run_gcc:
   stage: test
   needs: ["macos:build_gcc"]
   variables:
-    PATH: "/usr/local/opt/python@3.8/bin:/opt/local/bin:/usr/local/bin/:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin"
+    PATH: "/usr/local/opt/python@3.9/bin:/opt/local/bin:/usr/local/bin/:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin"
   <<: *test_step
   tags:
     - macos_10.13

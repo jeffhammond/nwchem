@@ -40,7 +40,9 @@ c
      + xfac(60) + xfac(61) + xfac(62) + xfac(63) + xfac(68) + xfac(69)+
      +     xfac(66) + cfac(66) + xfac(67) + cfac(67) +
      +     cfac(68)+  cfac(69) + xfac(70) + xfac(71) + cfac(71) +
-     L     xfac(72) + lxdm +
+     +     xfac(72) + xfac(73) + xfac(74) +
+     +     xfac(75) + cfac(75) +
+     L     lxdm +
 cc AJL/Begin/FDE
      + xfac_fde(3) + xfac_fde(4) + xfac_fde(5) + xfac_fde(6) + 
      + xfac_fde(7) +
@@ -190,6 +192,8 @@ cb973     .     xfac(22).ne.0d0.or.
      .     xfac(68).ne.0d0.or.
      .     xfac(69).ne.0d0.or.
      .     xfac(71).ne.0d0.or.
+     .     xfac(73).ne.0d0.or.
+     .     xfac(74).ne.0d0.or.
 c
 chcth     .     cfac(13).ne.0d0.or.
 cCbecke97     .     cfac(14).ne.0d0.or.
@@ -224,6 +228,8 @@ chp414     .     cfac(21).ne.0d0.or.
      .     cfac(68).ne.0d0.or.
      .     cfac(69).ne.0d0.or.
      .     cfac(71).ne.0d0.or.
+     .     cfac(73).ne.0d0.or.
+     .     cfac(74).ne.0d0.or.
      .     cfac(36).ne.0d0)
       if (util_module_avail("nwxc")) then
          call nwxc_getvals("nwxc_has_2nd",out1)
@@ -259,7 +265,7 @@ c
      +      cfac(48) + cfac(49) + cfac(50) + cfac(51) +
      +      xfac(66) + cfac(66) + xfac(67) + cfac(67) +
      +      xfac(68) + cfac(68) + xfac(69) + cfac(69) +
-     +      xfac(71) + cfac(71) +
+     +      xfac(71) + cfac(71) + xfac(73) + cfac(73) +
 cc AJL/Begin/FDE
      +      xfac_fde(18) + cfac_fde(25) + xfac_fde(21) + cfac_fde(27) +
      +      xfac_fde(28) + xfac_fde(29) + xfac_fde(33) + xfac_fde(34) + 
@@ -491,7 +497,10 @@ c
      .     xfac(67).ne.0d0.or.  ! SCAN-L
      .     xfac(68).ne.0d0.or.  ! revM06
      .     xfac(69).ne.0d0.or.  ! revM06-L
-     .     xfac(71).ne.0d0.or.  ! regSCAN
+     .     xfac(71).ne.0d0.or.  ! rSCAN
+     .     xfac(73).ne.0d0.or.  ! r^2SCAN
+     .     xfac(74).ne.0d0.or.  ! r^2SCAN-L
+     .     xfac(75).ne.0d0.or.  ! hcth147@tz2p
 c
      .     cfac(5).ne.0d0.or.   ! PW91
      .     cfac(13).ne.0d0.or.  ! HCTH
@@ -537,7 +546,10 @@ c
      .     cfac(67).ne.0d0.or.  ! SCAN-L
      .     cfac(68).ne.0d0.or.  ! revM06
      .     cfac(69).ne.0d0.or.  ! revM06-L
-     .     cfac(71).ne.0d0      ! regSCAN
+     .     cfac(71).ne.0d0.or.  ! rSCAN
+     .     cfac(73).ne.0d0.or.  ! r^2SCAN
+     .     cfac(74).ne.0d0.or.  ! r^2SCAN-L
+     .     cfac(75).ne.0d0      ! hcth147@tz2p
      .                )
 c
       return
@@ -549,7 +561,7 @@ C
 #include "util.fh"
       double precision tot,eps
       parameter(eps=1.d-10)
-      tot = xfac(67) + cfac(67)
+      tot = xfac(67) + cfac(67) + xfac(74) + cfac(74)
 
       if (abs(tot).gt.eps) then
         xc_chklap = .true.

@@ -98,6 +98,8 @@ c
       double precision eps,dumd
       integer nx,nc,dumi
       parameter (eps=1.e-8)
+      double precision ddot
+      external ddot
 c
 c     Initialize the XC potential and energy sampling matrices.
 c
@@ -303,6 +305,11 @@ c
          dohcth=.true.
          nx=11
          nc=17
+      elseif (abs(xfac(75)).gt.eps.or.abs(cfac(75)).gt.eps)then
+         whichf='h7tz'
+         dohcth=.true.
+         nx=75
+         nc=75
       elseif (abs(xfac(5)).gt.eps.or.abs(cfac(14)).gt.eps)then
          whichf='b970'
          dohcth=.true.
@@ -1688,6 +1695,50 @@ c
      &                     func)
          else
             call xc_cscanl_d2()
+         endif
+      endif
+c
+c     r^2SCAN meta GGA
+c
+      if (abs(xfac(73)).gt.eps) then
+         if(.not. do_2nd) then
+            call xc_xr2scan(tol_rho, xfac(73), rho, delrho, Amat, 
+     &                    Cmat, nq, ipol, Ex, qwght, ldew, func, ttau, 
+     &                    Mmat)
+         else
+            call xc_xr2scan_d2()
+         endif
+      endif
+c
+      if (abs(cfac(73)).gt.eps) then
+         if(.not. do_2nd) then
+            call xc_cr2scan(tol_rho, cfac(73), rho, delrho, Amat, 
+     &                    Cmat, nq, ipol, Ec, qwght, ldew, func, ttau, 
+     &                    Mmat)
+         else
+            call xc_cr2scan_d2()
+         endif
+      endif
+c
+c     r^2SCAN-L meta GGA
+c
+      if (abs(xfac(74)).gt.eps) then
+         if(.not. do_2nd) then
+            call xc_xr2scanl(tol_rho, xfac(74), rho, delrho, laprho, 
+     &                    Amat, Cmat, Lmat, nq, ipol, Ex, qwght, ldew, 
+     &                    func)
+         else
+            call xc_xr2scanl_d2()
+         endif
+      endif
+c
+      if (abs(cfac(74)).gt.eps) then
+         if(.not. do_2nd) then
+            call xc_cr2scanl(tol_rho, cfac(74), rho, delrho, laprho, 
+     &                    Amat, Cmat, Lmat, nq, ipol, Ec, qwght, ldew, 
+     &                    func)
+         else
+            call xc_cr2scanl_d2()
          endif
       endif
 c

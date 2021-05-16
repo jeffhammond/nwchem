@@ -54,12 +54,12 @@
 *     **** local variables ****
       logical newpsi,lprint,mprint,hprint
       real*8  gx,gy,gz,cx,cy,cz
-      real*8  EV,pi,weight
+      real*8  EV,EVQ,rs,pi,weight
       real*8  icharge,en(2)
       real*8  f0,f1,f2,f3,f4,f5,f6
       integer if1,if2
       integer i,k,ia,nion,vers,nbrillioun,nb,ms
-      integer mapping,minimizer
+      integer mapping,minimizer,mapping1d
 
 *     **** external functions ****
       real*8      lattice_omega,lattice_unita,lattice_ecut,lattice_wcut
@@ -132,6 +132,8 @@
       external pspw_reformat_c_wvfnc,control_check_charge_multiplicity
       integer  control_mapping,control_minimizer,control_np_dimensions
       external control_mapping,control_minimizer,control_np_dimensions
+      integer  control_mapping1d
+      external control_mapping1d
       integer  control_scf_algorithm,control_ks_algorithm
       external control_scf_algorithm,control_ks_algorithm
       real*8   control_ks_alpha,control_kerker_g0
@@ -146,6 +148,8 @@
       external control_fractional_smeartype
       real*8   control_fractional_kT,control_fractional_alpha
       external control_fractional_kT,control_fractional_alpha
+      integer  control_diis_histories
+      external control_diis_histories
 
 c      character*255 cpsp_comment,comment
 c      external      cpsp_comment
@@ -158,6 +162,14 @@ c      external      cpsp_comment
       external control_smooth_cutoff_values
       logical  nwpwxc_is_on,control_only_lda,control_precondition
       external nwpwxc_is_on,control_only_lda,control_precondition
+      integer  Parallel_maxthreads
+      external Parallel_maxthreads
+      logical  control_parallel_io
+      external control_parallel_io
+
+      real*8 E0
+      real*8   cpsi_1energy,cpsi_smearcorrection
+      external cpsi_1energy,cpsi_smearcorrection
 
 
 *****************************|  PROLOGUE  |****************************
@@ -225,7 +237,7 @@ c      external      cpsp_comment
       call C3dB_Init(1,ngrid(1),ngrid(2),ngrid(3),mapping)
       call C3dB_nfft3d(1,nfft3d)
        
-      call cpsi_data_init(20)
+      call cpsi_data_init(30)
 
 *     **** read ions ****
       value = ion_init(rtdb)
@@ -240,6 +252,7 @@ c      external      cpsp_comment
       call brillioun_init()
       call Cram_Init()
       call C3dB_pfft_init()
+
 
 *     **** initialize D3dB data structure and mask for GGA ****
 c      if (((control_gga().ge.10).and.(control_gga().le.200))
@@ -298,13 +311,18 @@ c      call center_mass(gx,gy,gz)
          spin_orbit = .false.
       end if
       nbrillioun = brillioun_nbrillioun()
-      call Pneb_init(ispin,ne,nbrillioun,spin_orbit)
+      mapping1d  = control_mapping1d()
+      call Pneb_init(ispin,ne,nbrillioun,mapping1d,spin_orbit)
       value = cpsi_initialize(.true.)
-      newpsi = newpsi.or.value
+      !newpsi = newpsi.or.value
 
 *     **** electron and geodesic data structures ****
       call c_electron_init()
-      call c_geodesic_init()
+      if ((minimizer.eq.4).or.(minimizer.eq.7)) then  !debug
+         call c_geodesic2_init()
+      else
+         call c_geodesic_init()
+      end if
 
 
 *     **** initialize QM/MM ****
@@ -351,6 +369,9 @@ c      call center_mass(gx,gy,gz)
         en(cpsi_ispin()) =  cpsi_ne(cpsi_ispin())
       end if
 
+      icharge = icharge + ion_TotalCharge()
+      rs  = (3.0d0*lattice_omega()/(4.0d0*pi))**(1.0d0/3.0d0)
+      EVQ = 0.5d0*ewald_mandelung()*(icharge**2)/rs
 
       if (mprint) then
          write(luout,1111) np
@@ -358,6 +379,13 @@ c      call center_mass(gx,gy,gz)
          if (mapping.eq.1) write(luout,1112)
          if (mapping.eq.2) write(luout,1113)
          if (mapping.eq.3) write(luout,1118)
+         write(luout,1119)  Parallel_maxthreads()
+
+         if (control_parallel_io()) then
+           write(luout,1123)
+         else
+           write(luout,1124)
+         end if
 
          write(luout,1115)
          write(luout,1121) control_boundry(),control_version()
@@ -388,7 +416,7 @@ c           write(luout,1154) cpsp_lmmax(ia)
            write(luout,1151) (cpsp_rc(i,ia),i=0,cpsp_lmax(ia))
          end do
 
-         icharge = icharge + ion_TotalCharge()
+c         icharge = icharge + ion_TotalCharge()
          write(luout,1159) icharge
 
 
@@ -437,8 +465,10 @@ c           write(luout,1154) cpsp_lmmax(ia)
          write(luout,1232) a,b,c,alpha,beta,gamma
          write(luout,1231) lattice_omega()
          write(luout,1260) ewald_rcut(),ewald_ncut()
-         write(luout,1261) ewald_mandelung()
-
+         !write(luout,1261) ewald_mandelung()
+         write(luout,1261) ewald_mandelung(),
+     >                     ewald_mandelung()
+     >                    *(4.0d0*pi/3.0)**(1.0d0/3.0d0),rs
          write(luout,1255)
          write(luout,1256) brillioun_nbrillioun(),
      >                     brillioun_nbrillioun0()
@@ -497,6 +527,14 @@ c     **** print brillioun zone - extra logic for distributed kpoints ****
 
          if ((minimizer.eq.5).or.(minimizer.eq.8)) then
            write(luout,1291)
+          if (control_ks_algorithm().eq.-1)  then
+             if (control_precondition()) then
+                write(luout,1292)
+     >             "block preconditioned conjugate gradient"
+             else
+                write(luout,1292) "block conjugate gradient"
+             end if
+           end if
            if (control_ks_algorithm().eq.0)  then
               if (control_precondition()) then
                  write(luout,1292) "preconditioned conjugate gradient"
@@ -510,9 +548,10 @@ c     **** print brillioun zone - extra logic for distributed kpoints ****
            if (control_scf_algorithm().eq.0)
      >       write(luout,1293) "simple mixing"
            if (control_scf_algorithm().eq.1)
-     >       write(luout,1293) "Anderson potential mixing"
+     >       write(luout,1293) "Broyden mixing"
            if (control_scf_algorithm().eq.2)
-     >       write(luout,1293) "Johnson-Pulay mixing"
+     >       write(luout,1289) "Johnson-Pulay mixing",
+     >                         control_diis_histories()
            if (control_scf_algorithm().eq.3)
      >       write(luout,1293) "Anderson density mixing"
            if (minimizer.eq.5) write(luout,1296) "potential"
@@ -561,6 +600,9 @@ c     **** print brillioun zone - extra logic for distributed kpoints ****
 
 *     **** extra energy output for QA test ****
       if (lprint) write(luout,1600) EV
+      if (lprint) then
+         if (EVQ.gt.0.0d0) write(LuOut,1601) EV+EVQ
+      end if
 
 *     **** calculate the spin contamination ****
       if (flag.gt.-1) call cpsi_spin2(dipole(1))
@@ -629,9 +671,14 @@ c     **** print brillioun zone - extra logic for distributed kpoints ****
 ******************         Epilogue          **********************
 *                |***************************|
 
+*     **** generate eig grid data file ****
+      call cpsi_printeigall(rtdb)
+
 *     **** calculate interpolated band structure plot ***
       call band_interpolate_structure(rtdb)
-cc      call band_kp_structure(rtdb)
+      call band_fft_structure(rtdb)
+      !call band_kp_structure(rtdb)
+
 
 *     **** calculate Mulliken Populations ***
       if (control_Mulliken()) then
@@ -642,6 +689,7 @@ cc      call band_kp_structure(rtdb)
 *     **** write geometry to rtdb ****
       call ion_write(rtdb)
 
+
 *     **** write wavefunctions to file and finalize psi ****
       if (flag.eq.-1) then
         value = cpsi_finalize(.false.)
@@ -651,7 +699,11 @@ cc      call band_kp_structure(rtdb)
 
 *     **** deallocate heap memory ****
       call c_electron_finalize()
-      call c_geodesic_finalize()
+      if ((minimizer.eq.4).or.(minimizer.eq.7)) then
+         call c_geodesic2_finalize()
+      else
+         call c_geodesic_finalize()
+      end if
       call ewald_end()
       call cstrfac_end()
       call c_coulomb_end()
@@ -667,6 +719,7 @@ cc      call band_kp_structure(rtdb)
       call cpsi_data_end()
       call C3dB_pfft_end()
       call C3dB_end(1)
+      call Pneb_end()
 c      IF (((control_gga().ge.10).and.(control_gga().le.200)) 
 c     >     .or.nwpwxc_is_on()) THEN
       if (.not.control_only_lda()) then
@@ -730,17 +783,20 @@ c     >     .or.nwpwxc_is_on()) THEN
  1100 FORMAT(//)
  1110 FORMAT(10X,'================ input data ========================')
  1111 FORMAT(/' number of processors used:',I16)
- 1112 FORMAT( ' parallel mapping         :         1d slab')
- 1113 FORMAT( ' parallel mapping         :     2d  hilbert')
+ 1112 FORMAT( ' parallel mapping         :         1d-slab')
+ 1113 FORMAT( ' parallel mapping         :      2d-hilbert')
  1115 FORMAT(/' options:')
  1117 FORMAT( ' processor grid           :',I4,' x',I4,' x',I4)
- 1118 FORMAT( ' parallel mapping         :       2d hcurve')
+ 1118 FORMAT( ' parallel mapping         :       2d-hcurve')
+ 1119 FORMAT( ' number of threads        :',I10)
  1120 FORMAT(5X,' ionic motion         = ',A)
  1121 FORMAT(5X,' boundary conditions  = ',A,'(version', I1,')')
+ 1123 FORMAT( ' parallel io              :        on')
+ 1124 FORMAT( ' parallel io              :       off')
  1130 FORMAT(5X,' electron spin        = ',A)
  1131 FORMAT(5X,' exchange-correlation = ',A)
  1140 FORMAT(/' elements involved in the cluster:')
- 1150 FORMAT(5X,I2,': ',A4,'  core charge:',F4.1,'  lmax=',I1)
+ 1150 FORMAT(5X,I2,': ',A4,'core charge:',F4.1,'  lmax=',I1)
  1151 FORMAT(5X,'        cutoff =',4F8.3)
  1152 FORMAT(12X,' highest angular component      : ',i3)
  1153 FORMAT(12X,' local potential used           : ',i3)
@@ -766,9 +822,9 @@ c     >     .or.nwpwxc_is_on()) THEN
  1221 FORMAT( ' number of orbitals:  spin up=',I8,
      >                          '  spin down=',I8,A)
  1230 FORMAT(/' supercell:')
- 1231 FORMAT(5x,' volume : ',F10.1)
- 1232 FORMAT(/5x,' lattice:    a=',f8.3,'    b=',f8.3,'     c=',f8.3,
-     >       /5x,'         alpha=',f8.3,' beta=',f8.3,' gamma=',f8.3)
+ 1231 FORMAT(5x,'             omega=',F12.1)
+ 1232 FORMAT(5x,' lattice:    a=    ',f8.3,' b=   ',f8.3,' c=    ',f8.3,
+     >      /5x,'             alpha=',f8.3,' beta=',f8.3,' gamma=',f8.3)
  1241 FORMAT(5x,' lattice:    a1=<',3f8.3,' >')
  1242 FORMAT(5x,'             a2=<',3f8.3,' >')
  1243 FORMAT(5x,'             a3=<',3f8.3,' >')
@@ -794,14 +850,16 @@ c     >     .or.nwpwxc_is_on()) THEN
  1257 FORMAT(5x,' weight=',f8.3,'  ks=<',3f8.3,' >, k=<',3f8.3,'>')
  1258 FORMAT(5x,' number of k-points is very large')
 
- 1260 FORMAT(5X,' Ewald summation: cut radius=',F8.2,'  and',I3)
- 1261 FORMAT(5X,'                   madelung=',f14.8)
+ 1260 FORMAT(/5X,' Ewald summation: cut radius=',F8.2,'  and',I3)
+ 1261 FORMAT(5X,'                  Madelung Wigner-Seitz=',f14.8,
+     >                              ' (alpha=',f14.8,' rs=',f11.8,')')
  
  1270 FORMAT(/' technical parameters:')
  1280 FORMAT(5X, ' time step=',F10.2,5X,'fictitious mass=',F10.1)
  1281 FORMAT(5X, ' maximum iterations =',I10,
      >           ' ( ',I4,' inner ',I6,' outer )')
- 1290 FORMAT(5X, ' tolerance=',E8.3,' (energy)',E12.3,
+ 1289 FORMAT(5X, ' scf algorithm        = ',A,' (',I2,' histories)')
+ 1290 FORMAT(5X, ' tolerance=',E9.3,' (energy)',E12.3,
      &        ' (density)')
  1291 FORMAT(/' Kohn-Sham scf parameters:')
  1292 FORMAT(5X, ' Kohn-Sham algorithm  = ',A)
@@ -813,7 +871,7 @@ c     >     .or.nwpwxc_is_on()) THEN
  1297 FORMAT(/' fractional smearing parameters:')
  1298 FORMAT(5X, ' smearing algorithm   = ',A)
  1299 FORMAT(5X, ' smearing parameter   = ',E9.3,' (',F7.1,' K)'/,
-     >       5X, ' mixing parmameter    = ',F7.4)
+     >       5X, ' mixing parameter     =',F7.4)
  1300 FORMAT(//)
  1301 FORMAT(5X, ' Kerker damping       =',F7.4)
  1305 FORMAT(10X,'================ iteration =========================')
@@ -843,7 +901,9 @@ c     >     .or.nwpwxc_is_on()) THEN
  1500 FORMAT(/' orbital energies:')
  1510 FORMAT(2(E18.7,' (',F8.3,'eV)'))
  1600 FORMAT(/' Total BAND energy   :',E19.10)
-
+ 1601 FORMAT(/' Total PSPW energy ',
+     >        '(charge correction - E + 0.5*q**2*mandelung/rs) :',
+     >        E19.10)
  1801 FORMAT(//'== Timing ==')
  1802 FORMAT(/'cputime in seconds')
  1803 FORMAT( '  prologue    : ',E14.6)
