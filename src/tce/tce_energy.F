@@ -2041,7 +2041,8 @@ c
 c  Tsources
 c  for UCC(4) model='ccsdt'
 c
-      if(intorb.and.((model.eq.'ccsdt').or.(model.eq.'ccsdtq'))) then
+      if(intorb.and.((model.eq.'ccsdt').or.(model.eq.'ccsdtq').or.
+     &               (model.eq.'cc3'))) then
         if(nodezero) then
          write(6,*)'IN MAPPING 1 for UCC(4),CCSDT,CCSDTQ'
          call util_flush(6)
@@ -3718,7 +3719,7 @@ c
         call errquit('tce_energy: maxiter exceeded',iter,CALC_ERR)
   104 continue
       endif
-      if (model.eq.'ccsdt') then
+      if ((model.eq.'ccsdt').or.(model.eq.'cc3')) then
 #if !defined(CCSDT)
         CALL ERRQUIT('CCSDT not compiled (tce_energy.F)',0,CAPMIS_ERR)
 #else
@@ -3737,11 +3738,17 @@ c end of Tsource
         do iter=1,maxiter
           cpu=-util_cpusec()
           wall=-util_wallsec()
-          if(.not.ucc4) then
-           if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "CCSDT"
-          else !ucc4
-           if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "UCC4"
-          endif
+          if (nodezero.and.(iter.eq.1)) then
+           if(.not.ucc4) then
+            if (model.eq.'cc3') then
+             write(LuOut,9050) "CC3"
+            else
+             write(LuOut,9050) "CCSDT"
+            end if
+           else !ucc4
+            write(LuOut,9050) "UCC4"
+           end if
+          end if
 c
          if(ucc4) then
           if(nodezero) then
@@ -3756,20 +3763,23 @@ c call transition procedure
           call t2_2_y2(d_t2,d_lambda2,k_t2_offset,k_l2_offset)
          endif
 c
-          if(.not.ucc4) then
-          ! ccsd_e and ccsdt_e are equivalent
-          if (.not.MA_PUSH_GET(mt_dbl,size_t1,'t1_local',
-     1                       l_t1_local,k_t1_local))
-     1      call errquit('ccsd_energy_loc: t1_local',1,MA_ERR)
-          call ma_zero(dbl_mb(k_t1_local),size_t1)
-          call get_block(d_t1,dbl_mb(k_t1_local),size_t1,0)
           call tce_filename('e',filename)
           call createfile(filename,d_e,size_e)
-          call ccsd_e(d_f1,d_e,k_t1_local,d_t2,d_v2,
-     1                k_f1_offset,k_e_offset,
-     2                k_t1_offset,k_t2_offset,k_v2_offset)
-          if(.not.MA_POP_STACK(l_t1_local))
-     &       call errquit('ccsd_energy_loc: l_t1_local',2,MA_ERR)
+          if(.not.ucc4) then
+          ! ccsd_e and ccsdt_e are equivalent
+!          if (.not.MA_PUSH_GET(mt_dbl,size_t1,'t1_local',
+!     1                       l_t1_local,k_t1_local))
+!     1      call errquit('tce_energy: t1_local',1,MA_ERR)
+!          call ma_zero(dbl_mb(k_t1_local),size_t1)
+!          call get_block(d_t1,dbl_mb(k_t1_local),size_t1,0)
+!          call ccsd_e(d_f1,d_e,dbl_mb(k_t1_local),d_t2,d_v2,
+!     1                k_f1_offset,k_e_offset,
+!     2                k_t1_offset,k_t2_offset,k_v2_offset)
+          call ccsdt_e(d_f1,d_e,d_t1,d_t2,d_v2,
+     1                 k_f1_offset,k_e_offset,
+     2                 k_t1_offset,k_t2_offset,k_v2_offset)
+!          if(.not.MA_POP_STACK(l_t1_local))
+!     &       call errquit('tce_energy: l_t1_local',2,MA_ERR)
           else ! ucc4
            if(nodezero) then
             write(6,*)'UCC4 energy'
@@ -3820,9 +3830,15 @@ c
           call tce_filename('r3',filename)
           call createfile(filename,d_r3,size_t3)
           if(.not.ucc4) then
-          call ccsdt_t3(d_f1,d_r3,d_t1,d_t2,d_t3,d_v2,
+           if (model.eq.'cc3') then
+            call cc3_t3(d_f1,d_r3,d_t1,d_t2,d_t3,d_v2,
      1                  k_f1_offset,k_t3_offset,k_t1_offset,
      2                  k_t2_offset,k_t3_offset,k_v2_offset)
+           else
+            call ccsdt_t3(d_f1,d_r3,d_t1,d_t2,d_t3,d_v2,
+     1                    k_f1_offset,k_t3_offset,k_t1_offset,
+     2                    k_t2_offset,k_t3_offset,k_v2_offset)
+           endif
           else  ! ucc4
           if(nodezero) then
            write(6,*)'UCC4 triples'
@@ -3843,9 +3859,15 @@ c
           if (residual .lt. thresh) then
             if (nodezero) then
              if(.not.ucc4) then
-              write(LuOut,9060)
-              write(LuOut,9070) "CCSDT",corr
-              write(LuOut,9080) "CCSDT",ref + corr
+              if (model.eq.'cc3') then
+               write(LuOut,9060)
+               write(LuOut,9070) "CC3",corr
+               write(LuOut,9080) "CC3",ref + corr
+              else
+               write(LuOut,9060)
+               write(LuOut,9070) "CCSDT",corr
+               write(LuOut,9080) "CCSDT",ref + corr
+              end if
              else 
               write(LuOut,9060)
               write(LuOut,9070) "UCC(4)",corr
@@ -6146,127 +6168,6 @@ c Tsource
      2                  d_r2,d_t2,k_t2_offset,size_t2,
      3                  dummy,dummy,dummy,dummy,
      4                  dummy,dummy,dummy,dummy)
-          call deletefile(d_r2)
-          call deletefile(d_r1)
-          call deletefile(d_e)
-          if (nodezero) call util_flush(LuOut)
-        enddo
-        call errquit('tce_energy: maxiter exceeded',iter,CALC_ERR)
-      endif
-      if (model.eq.'cc3') then
-! -------------
-! CC3   right
-! -------------
-        call tce_diis_init()
-        do iter=1,maxiter
-          cpu=-util_cpusec()
-          wall=-util_wallsec()
-          if (nodezero.and.(iter.eq.1)) write(LuOut,9050) "CC3"
-          call tce_filename('e',filename)
-          call createfile(filename,d_e,size_e)
-          call ccsdt_e(d_f1,d_e,d_t1,d_t2,d_v2,
-     1                 k_f1_offset,k_e_offset,
-     2                 k_t1_offset,k_t2_offset,k_v2_offset)
-          call reconcilefile(d_e,size_e)
-          call tce_filename('r1',filename)
-          call createfile(filename,d_r1,size_t1)
-          call ccsdt_t1(d_e,d_f1,d_r1,d_t1,d_t2,d_t3,d_v2,
-     1                  k_e_offset,k_f1_offset,k_t1_offset,k_t1_offset,
-     2                  k_t2_offset,k_t3_offset,k_v2_offset)
-          call reconcilefile(d_r1,size_t1)
-          call tce_filename('r2',filename)
-          call createfile(filename,d_r2,size_t2)
-          call ccsdt_t2(d_e,d_f1,d_r2,d_t1,d_t2,d_t3,d_v2,
-     1                  k_e_offset,k_f1_offset,k_t2_offset,k_t1_offset,
-     2                  k_t2_offset,k_t3_offset,k_v2_offset)
-          call reconcilefile(d_r2,size_t2)
-          call tce_filename('r3',filename)
-          call createfile(filename,d_r3,size_t3)
-          call cc3_t3(d_e,d_f1,d_r3,d_t1,d_t2,d_t3,d_v2,
-     1                  k_e_offset,k_f1_offset,k_t3_offset,k_t1_offset,
-     2                  k_t2_offset,k_t3_offset,k_v2_offset)
-          call reconcilefile(d_r3,size_t3)
-          call tce_residual_t1(d_r1,k_t1_offset,r1)
-          call tce_residual_t2(d_r2,k_t2_offset,r2)
-          call tce_residual_t3(d_r3,k_t3_offset,r3)
-          residual = max(r1,r2,r3)
-          call get_block(d_e,corr,1,0)
-          cpu=cpu+util_cpusec()
-          wall=wall+util_wallsec()
-          if (nodezero) write(LuOut,9100) iter,residual,corr,cpu,wall
-          if (residual .lt. thresh) then
-            if (nodezero) then
-              write(LuOut,9060)
-              write(LuOut,9070) "CC3",corr
-              write(LuOut,9080) "CC3",ref + corr
-            endif
-            call deletefile(d_r3)
-            call deletefile(d_r2)
-            call deletefile(d_r1)
-            call deletefile(d_e)
-            if (ampnorms) then
-              call tce_residual_t1(d_t1,k_t1_offset,r1)
-              call tce_residual_t2(d_t2,k_t2_offset,r2)
-              call tce_residual_t3(d_t3,k_t3_offset,r3)
-              if (nodezero) then
-                write(LuOut,9082) "T singles",r1
-                write(LuOut,9082) "T doubles",r2
-                write(LuOut,9082) "T triples",r3
-              endif
-            endif
-            call tce_print_x1(d_t1,k_t1_offset,printtol,irrep_t)
-            call tce_print_x2(d_t2,k_t2_offset,printtol,irrep_t)
-            call tce_diis_tidy()
-            if (save_t(1)) then
-              if(nodezero) then
-                write(LuOut,*) 'Saving T1 now...'
-              endif
-              call x1_restart_save(d_t1,k_t1_offset,size_t1,0,
-     1                             handle_t1,irrep_t)
-            endif
-            if (save_t(2)) then
-              if(nodezero) then
-                write(LuOut,*) 'Saving T2 now...'
-              endif
-              call x2_restart_save(d_t2,k_t2_offset,size_t2,0,
-     1                             handle_t2,irrep_t)
-            endif
-            if (save_t(3)) then
-              if(nodezero) then
-                write(LuOut,*) 'Saving T3 now...'
-              endif
-              call x3_restart_save(d_t3,k_t3_offset,size_t3,0,
-     1                             handle_t3,irrep_t)
-            endif
-            goto 100
-          endif
-          if (save_t(1).and.(mod(iter,save_interval).eq.0)) then
-            if(nodezero) then
-              write(LuOut,*) 'Saving T1 now...'
-            endif
-            call x1_restart_save(d_t1,k_t1_offset,size_t1,0,
-     1                           handle_t1,irrep_t)
-          endif
-          if (save_t(2).and.(mod(iter,save_interval).eq.0)) then
-            if(nodezero) then
-              write(LuOut,*) 'Saving T2 now...'
-            endif
-            call x2_restart_save(d_t2,k_t2_offset,size_t2,0,
-     1                           handle_t2,irrep_t)
-          endif
-          if (save_t(3).and.(mod(iter,save_interval).eq.0)) then
-            if(nodezero) then
-              write(LuOut,*) 'Saving T3 now...'
-            endif
-            call x3_restart_save(d_t3,k_t3_offset,size_t3,0,
-     1                           handle_t3,irrep_t)
-          endif
-          call tce_diis(.false.,iter,.true.,.true.,.true.,.false.,
-     1                  d_r1,d_t1,k_t1_offset,size_t1,
-     2                  d_r2,d_t2,k_t2_offset,size_t2,
-     3                  d_r3,d_t3,k_t3_offset,size_t3,
-     4                  dummy,dummy,dummy,dummy)
-          call deletefile(d_r3)
           call deletefile(d_r2)
           call deletefile(d_r1)
           call deletefile(d_e)
