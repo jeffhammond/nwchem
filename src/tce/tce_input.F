@@ -136,8 +136,7 @@
 ! -------------------------------------
 !
       if (.not.rtdb_cget(rtdb,'tce:module',1,module))
-     1  call errquit('tce_input: failed reading from rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed reading from rtdb',0,RTDB_ERR)
 !
 ! ------------------
 ! Set default values
@@ -147,8 +146,7 @@
 !
       reference=1
       if (.not.rtdb_put(rtdb,'tce:reference',mt_int,1,reference))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     FREEZE (frozen cores/virtuals)
 !
@@ -162,36 +160,30 @@
 !
       thresh=1.0d-7
       if (.not.rtdb_put(rtdb,'tce:thresh',mt_dbl,1,thresh))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     LEVEL SHIFT (for singles and doubles)
 !
       zlshift=0.0d0
       if (.not.rtdb_put(rtdb,'tce:zlshift',mt_dbl,1,zlshift))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       zlshiftl=0.0d0
       if (.not.rtdb_put(rtdb,'tce:zlshiftl',mt_dbl,1,zlshiftl))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       zlshift2(1)=0.0d0
       zlshift2(2)=0.0d0
       if (.not.rtdb_put(rtdb,'tce:zlshift2',mt_dbl,2,zlshift2))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       zlshift3(1)=0.0d0
       zlshift3(2)=0.0d0
       if (.not.rtdb_put(rtdb,'tce:zlshift3',mt_dbl,2,zlshift3))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     MAXITER (the maximum number of Davidson iterations)
 !
       maxiter=100
       if (.not.rtdb_put(rtdb,'tce:maxiter',mt_int,1,maxiter))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     IO (I/O method, 0 = Fortran Direct Access, 
 !                     1 = C Low-Level I/O,
@@ -201,94 +193,79 @@
 !
       ioalg=2
       if (.not.rtdb_put(rtdb,'tce:ioalg',mt_int,1,ioalg))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     DIIS (the vector space size in DIIS)
 !
       diis=5
       if (.not.rtdb_put(rtdb,'tce:diis',mt_int,1,diis))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       diis2=5
       if (.not.rtdb_put(rtdb,'tce:diis2',mt_int,1,diis2))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       diis3=5
       if (.not.rtdb_put(rtdb,'tce:diis3',mt_int,1,diis3))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     EOMCC SOLVER
 !
       eomsol=1
       if (.not.rtdb_put(rtdb,'tce:eoms',mt_int,1,eomsol))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     DIMENSION OF THE EOM ITERATIVE SPACE
 !
       hbard=500
       if (.not.rtdb_put(rtdb,'tce:hbard',mt_int,1,hbard))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     NROOTS (the number of excited state roots)
 !
       nroots=0
       if (.not.rtdb_put(rtdb,'tce:nroots',mt_int,1,nroots))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     2e STORAGE
 !
       model2e='default'
       if (.not.rtdb_cput(rtdb,'tce:model2e',1,model2e))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 ! 4ind. transfromation
 !
        maxs=30
       if (.not.rtdb_put(rtdb,'tce:maxs',mt_int,1,maxs))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR) 
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
        ichopx=1
       if (.not.rtdb_put(rtdb,'tce:ichopx',mt_int,1,ichopx))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
        i4im=1
       if (.not.rtdb_put(rtdb,'tce:i4im',mt_int,1,i4im))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       idiskx=0
       if (.not.rtdb_put(rtdb,'tce:idiskx',mt_int,1,idiskx))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     TARGET (the target excited state for, e.g., geometry optimization)
 !
       target=1
       if (.not.rtdb_put(rtdb,'tce:target',mt_int,1,target))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     TARGETSYM (the irrep of the target excited state)
 !
       targetsym='none'
       if (.not.rtdb_cput(rtdb,'tce:targetsym',1,targetsym))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     SYMMETRY (restricts the roots to have the TARGETSYM irrep)
 !
       symmetry=.false.
       if (.not.rtdb_put(rtdb,'tce:symmetry',mt_log,1,symmetry))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     IDENS (one particle reduced density matrix)
 !
@@ -301,107 +278,89 @@
 !
       left=.false.
       if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     MULTIPOLE LMAX (multipole moments highest angular momentum)
 !
       multipole=0
       if (.not.rtdb_put(rtdb,'tce:multipole',mt_int,1,multipole))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     FRAGMENT (fragment MO calculations)
 !
       fragment=-1
       if (.not.rtdb_put(rtdb,'tce:fragment',mt_int,1,fragment))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     (NO)FOCK (recompute fock for, e.g., DFT, ROHF refs)
 !
       recompf=.true.
       if (.not.rtdb_put(rtdb,'tce:recompf',mt_log,1,recompf))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_OA,OB (Number of active occupied orbitals)
 !
       oactive(1)=0
       if (.not.rtdb_put(rtdb,'tce:active_oa',mt_int,1,oactive(1)))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       oactive(2)=0
       if (.not.rtdb_put(rtdb,'tce:active_ob',mt_int,1,oactive(2)))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ccsd_act/eomccsd_act
 !
       oact=0
       if (.not.rtdb_put(rtdb,'tce:oact',mt_int,1,oact))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       uact=0
       if (.not.rtdb_put(rtdb,'tce:uact',mt_int,1,uact))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       emin_act=0.0d0
       if (.not.rtdb_put(rtdb,'tce:eactmin',mt_dbl,1,emin_act))
-     1  call errquit('tce_input: rtdb eactmin problem',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: rtdb eactmin problem',0,RTDB_ERR)
       emax_act=0.0d0
       if (.not.rtdb_put(rtdb,'tce:eactmax',mt_dbl,1,emax_act))
-     1  call errquit('tce_input: rtdb eactmax problem',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: rtdb eactmax problem',0,RTDB_ERR)
 !
 !     ACTIVE_VA,VB (Number of active virtual orbitals)
 !
       vactive(1)=0
       if (.not.rtdb_put(rtdb,'tce:active_va',mt_int,1,vactive(1)))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       vactive(2)=0
       if (.not.rtdb_put(rtdb,'tce:active_vb',mt_int,1,vactive(2)))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !    ACTIVE EXCITATION LEVEL (number of active orbitals in T3)
 !
       numact=0
       if (.not.rtdb_put(rtdb,'tce:act_excit_lvl',mt_int,1,numact))
-     1  call errquit('tce_input: failed writing to rtdb',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 ! ----------
 ! Read input
 ! ----------
 !
    10 if (.not. inp_read()) 
-     1  call errquit('tce_input: failed reading input',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed reading input',0,RTDB_ERR)
       if (.not. inp_a(test)) 
-     1  call errquit('tce_input: failed reading keyword',0,
-     2  RTDB_ERR)
+     1  call errquit('tce_input: failed reading keyword',0,RTDB_ERR)
 !
 !     DFT, HF, or SCF (reference wavefunction)
 !
       if (inp_compare(.false.,test,'dft')) then
         reference=0
         if (.not.rtdb_put(rtdb,'tce:reference',mt_int,1,reference))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'hf')) then
         reference=1
         if (.not.rtdb_put(rtdb,'tce:reference',mt_int,1,reference))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'scf')) then
         reference=1
         if (.not.rtdb_put(rtdb,'tce:reference',mt_int,1,reference))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     FREEZE (frozen cores/virtuals)
 !
@@ -414,8 +373,7 @@
         if (module.eq.'tce') then
         model2e='2eorb'
         if (.not.rtdb_cput(rtdb,'tce:model2e',1,model2e))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -424,8 +382,7 @@
         if (module.eq.'tce') then
         model2e='2espin'
         if (.not.rtdb_cput(rtdb,'tce:model2e',1,model2e))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -437,38 +394,31 @@
         if (module.eq.'tce') then
         model='multi'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
-          call errquit('tce_input: multiple theory inputs',0,
-     2    INPUT_ERR)
+          call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
         endif
       else if (inp_compare(.false.,test,'eionly')) then
         if (module.eq.'tce') then
         model='eionly'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
-          call errquit('tce_input: multiple theory inputs',0,
-     2    INPUT_ERR)
+          call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
         endif
       else if (inp_compare(.false.,test,'ccd')) then
         if (module.eq.'tce') then
         model='ccd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
-        call errquit('tce_input: multiple theory inputs',0,
-     2  INPUT_ERR)
+        call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
         endif
       else if (inp_compare(.false.,test,'lccd')) then
         if (module.eq.'tce') then
         model='lccd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -477,8 +427,7 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -488,8 +437,7 @@
         if (module.eq.'tce') then
         model='ccsd_act'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -498,8 +446,7 @@
         if (module.eq.'tce') then
         model='lccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -508,12 +455,10 @@
         if (module.eq.'tce') then
         model='lccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -522,12 +467,10 @@
         if (module.eq.'tce') then
         model='lccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='cr_(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -537,12 +480,10 @@
         if (module.eq.'tce') then
         model='ccsd_act'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='cr_(t)a'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -551,18 +492,48 @@
         if (module.eq.'tce') then
         model='ccsdta'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
+        endif
+      else if (inp_compare(.false.,test,'cc3')) then
+        if (module.eq.'tce') then
+        model='cc3'
+        if (.not.rtdb_cput(rtdb,'tce:model',1,model))
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
+        else
+        call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
+        endif
+      else if (inp_compare(.false.,test,'ccsdt-1')) then
+        if (module.eq.'tce') then
+        model='ccsdt-1'
+        if (.not.rtdb_cput(rtdb,'tce:model',1,model))
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
+        else
+        call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
+        endif
+      else if (inp_compare(.false.,test,'ccsdt-2')) then
+        if (module.eq.'tce') then
+        model='ccsdt-2'
+        if (.not.rtdb_cput(rtdb,'tce:model',1,model))
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
+        else
+        call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
+        endif
+      else if (inp_compare(.false.,test,'ccsdt-3')) then
+        if (module.eq.'tce') then
+        model='ccsdt-3'
+        if (.not.rtdb_cput(rtdb,'tce:model',1,model))
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
+        else
+        call errquit('tce_input: multiple theory inputs',0,INPUT_ERR)
         endif
       else if (inp_compare(.false.,test,'ccsdt')) then
         if (module.eq.'tce') then
         model='ccsdt'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -571,8 +542,7 @@
         if (module.eq.'tce') then
         model='ccsdtq'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -581,15 +551,12 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         ccsd_var='cc2'
         if (.not.rtdb_cput(rtdb,'tce:ccsdvar',1,ccsd_var))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         if (.not.rtdb_put(rtdb,'tce:nts',mt_log,1,.false.))
-     1    call errquit('tce_input: failed writing nts to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -598,12 +565,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         ccsd_var='lr-ccsd'
         if (.not.rtdb_cput(rtdb,'tce:ccsdvar',1,ccsd_var))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -612,12 +577,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -626,12 +589,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='[t]'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -640,12 +601,10 @@
         if (module.eq.'tce') then
         model='qcisd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -654,12 +613,10 @@
         if (module.eq.'tce') then
         model='qcisd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='cr_(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -671,16 +628,13 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='lambda(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -710,12 +664,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='cr_(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -724,12 +676,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='lr_(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -738,12 +688,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='creom_(t)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -753,12 +701,10 @@
         if (module.eq.'tce') then
         model='ccsd_act'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='creom(t)a'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -767,12 +713,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='emb1'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -781,12 +725,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='emb2'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -795,12 +737,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='lr_(tq1)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -809,12 +749,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='lr_(tq1p)'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -823,12 +761,10 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='cr_[t]'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -837,16 +773,13 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='2_t'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -855,16 +788,13 @@
         if (module.eq.'tce') then
         model='ccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='2_tq'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -873,16 +803,13 @@
         if (module.eq.'tce') then
         model='ccsdt'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         perturbative='2_q'
         if (.not.rtdb_cput(rtdb,'tce:perturbative',1,perturbative))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -891,8 +818,7 @@
         if (module.eq.'tce') then
         model='qcisd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -911,8 +837,7 @@
         if (module.eq.'tce') then
         model='cisd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -921,8 +846,7 @@
         if (module.eq.'tce') then
         model='cisdt'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -931,8 +855,7 @@
         if (module.eq.'tce') then
         model='cisdtq'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -941,8 +864,7 @@
         if (module.eq.'tce') then
         model='mbpt2'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -951,8 +873,7 @@
         if (module.eq.'tce') then
         model='mbpt3'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -961,8 +882,7 @@
         if (module.eq.'tce') then
         model='mbpt4'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -971,8 +891,7 @@
         if (module.eq.'tce') then
         model='mbpt4sdq'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -981,8 +900,7 @@
         if (module.eq.'tce') then
         model='mbpt4sdq_t'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -991,8 +909,7 @@
         if (module.eq.'tce') then
         model='mbpt2'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -1001,8 +918,7 @@
         if (module.eq.'tce') then
         model='mbpt3'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -1011,8 +927,7 @@
         if (module.eq.'tce') then
         model='mbpt4sdq'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1       INPUT_ERR)
@@ -1021,8 +936,7 @@
         if (module.eq.'tce') then
         model='mbpt4sdq_t'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1       INPUT_ERR)
@@ -1031,8 +945,7 @@
         if (module.eq.'tce') then
         model='mbpt4'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -1045,11 +958,9 @@
         if (module.eq.'tce') then
         model='bwccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         if (.not.rtdb_put(rtdb,'tce:mrcc',mt_int,1,1))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -1059,11 +970,9 @@
         if (module.eq.'tce') then
         model='mkccsd'
         if (.not.rtdb_cput(rtdb,'tce:model',1,model))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         if (.not.rtdb_put(rtdb,'tce:mrcc',mt_int,1,1))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         else
         call errquit('tce_input: multiple theory inputs',0,
      1    INPUT_ERR)
@@ -1080,8 +989,7 @@
           thresh=1.0d-6
         endif
         if (.not.rtdb_put(rtdb,'tce:thresh',mt_dbl,1,thresh))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     LEVEL SHIFT
 !
@@ -1092,8 +1000,7 @@
           zlshift=0.0d0
         endif
         if (.not.rtdb_put(rtdb,'tce:zlshift',mt_dbl,1,zlshift))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'lshiftl')) then
         if (.not.inp_f(zlshiftl)) then
           write(LuOut,*) 'tce_input: lshiftl value not found; ',
@@ -1101,8 +1008,7 @@
           zlshiftl=0.0d0
         endif
         if (.not.rtdb_put(rtdb,'tce:zlshiftl',mt_dbl,1,zlshiftl))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'lshift2')) then
         if (.not.inp_f(zlshift2(1))) then
           write(LuOut,*) 'tce_input: lshift2(1) value not found; ',
@@ -1115,8 +1021,7 @@
           zlshift2(2)=0.0d0
         endif
         if (.not.rtdb_put(rtdb,'tce:zlshift2',mt_dbl,2,zlshift2))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'lshift3')) then
         if (.not.inp_f(zlshift3(1))) then
           write(LuOut,*) 'tce_input: lshift3(1) value not found; ',
@@ -1129,8 +1034,7 @@
           zlshift3(2)=0.0d0
         endif
         if (.not.rtdb_put(rtdb,'tce:zlshift3',mt_dbl,2,zlshift3))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 
 !
 !      TCE_CUDA Number of CUDA devices per node
@@ -1140,8 +1044,7 @@
         if (.not.inp_i(icuda))
      1    call errquit('tce_input: no icuda',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:cuda',mt_int,1,icuda))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 
 #else
         call errquit('cuda option needs TCE_CUDA compiled code',
@@ -1157,8 +1060,7 @@
           maxiter=100
         endif
         if (.not.rtdb_put(rtdb,'tce:maxiter',mt_int,1,maxiter))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     IOALGORITHM (I/O method)
 !
@@ -1185,8 +1087,7 @@
           endif
         endif
         if (.not.rtdb_put(rtdb,'tce:ioalg',mt_int,1,ioalg))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 ! EOMCC SOLVER
 !
@@ -1197,8 +1098,7 @@
           eomsol=1
         endif
         if (.not.rtdb_put(rtdb,'tce:eoms',mt_int,1,eomsol))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     DIIS (the vector space size in DIIS)
 !
@@ -1209,8 +1109,7 @@
           diis=5
         endif
         if (.not.rtdb_put(rtdb,'tce:diis',mt_int,1,diis))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'diis2')) then
         if (.not.inp_i(diis2)) then
           write(LuOut,*) 'tce_input: diis2 value not found; ',
@@ -1218,8 +1117,7 @@
           diis2=5
         endif
         if (.not.rtdb_put(rtdb,'tce:diis2',mt_int,1,diis2))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'diis3')) then
         if (.not.inp_i(diis3)) then
           write(LuOut,*) 'tce_input: diis3 value not found; ',
@@ -1227,8 +1125,7 @@
           diis3=5
         endif
         if (.not.rtdb_put(rtdb,'tce:diis3',mt_int,1,diis3))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 ! DIMENSION OF EOMCC ITERATIVE SPACE
 !
@@ -1239,8 +1136,7 @@
           hbard=500
         endif
         if (.not.rtdb_put(rtdb,'tce:hbard',mt_int,1,hbard))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     NROOTS (the number of excited state root)
 !
@@ -1251,16 +1147,14 @@
           nroots=0
         endif
         if (.not.rtdb_put(rtdb,'tce:nroots',mt_int,1,nroots))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !kbn EACCSD
 #ifdef EACCSD
       else if (inp_compare(.false.,test,'eaccsd')) then
         eaccsd=.true.
         if (.not.rtdb_put(rtdb,'tce:eaccsd',mt_log,1,eaccsd))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 #endif
 !
 !kbn IPCCSD
@@ -1268,8 +1162,7 @@
       else if (inp_compare(.false.,test,'ipccsd')) then
         ipccsd=.true.
         if (.not.rtdb_put(rtdb,'tce:ipccsd',mt_log,1,ipccsd))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 #endif
 !
 !     MAXDIFF (for EOM codes)
@@ -1281,8 +1174,7 @@
           maxdiff=0.5d0
         endif
         if (.not.rtdb_put(rtdb,'tce:maxdiff',mt_dbl,1,maxdiff))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     2e STORAGE
 !
@@ -1293,8 +1185,7 @@
           maxs=30
         endif
         if (.not.rtdb_put(rtdb,'tce:maxs',mt_int,1,maxs))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       else if (inp_compare(.false.,test,'split')) then
         if (.not.inp_i(ichopx)) then
@@ -1303,8 +1194,7 @@
           ichopx=1
         endif
         if (.not.rtdb_put(rtdb,'tce:ichopx',mt_int,1,ichopx))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       else if (inp_compare(.false.,test,'2emet')) then
         if (.not.inp_i(i4im)) then
@@ -1313,8 +1203,7 @@
           i4im=1
         endif
         if (.not.rtdb_put(rtdb,'tce:i4im',mt_int,1,i4im))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       else if (inp_compare(.false.,test,'idiskx')) then
         if (.not.inp_i(idiskx)) then
@@ -1323,8 +1212,7 @@
           idiskx=0
         endif
         if (.not.rtdb_put(rtdb,'tce:idiskx',mt_int,1,idiskx))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     TARGET (the target excited state for, e.g., geometry optimization)
 !
@@ -1337,8 +1225,7 @@
         if (target.gt.nroots) call errquit
      1    ('tce_input: an illegal value for target',target,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:target',mt_int,1,target))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     TARGETSYM (the symmetry of the target excited state)
 !
@@ -1349,16 +1236,14 @@
           targetsym='none'
         endif
         if (.not.rtdb_cput(rtdb,'tce:targetsym',1,targetsym))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     SYMMETRY (restricts the roots to have the TARGETSYM irrep)
 !
       else if (inp_compare(.false.,test,'symmetry')) then
         symmetry=.true.
         if (.not.rtdb_put(rtdb,'tce:symmetry',mt_log,1,symmetry))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     IDENS (one particle reduced density matrix)
 !
@@ -1366,11 +1251,9 @@
          idens=.true.
          left =.true.
          if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1      call errquit('tce_input: failed writing to rtdb',0,
-     2      RTDB_ERR)
+     1      call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
          if (.not.rtdb_put(rtdb,'tce:densmat',mt_log,1,idens))
-     1      call errquit('tce_input: failed writing to rtdb',0,
-     2      RTDB_ERR)
+     1      call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
          if (.not.inp_a(file_densmat)) then
             call util_file_name('densmat', .false.,.false.,file_densmat)
          endif
@@ -1383,16 +1266,14 @@
       else if (inp_compare(.false.,test,'multipole')) then
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         if (.not.inp_i(multipole)) then
           write(LuOut,*) 'tce_input: multipole value not found; ',
      1      'all available multipoles (L=1,2,3) will be calculated'
           multipole=3
         endif
         if (.not.rtdb_put(rtdb,'tce:multipole',mt_int,1,multipole))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     DIPOLE (dipole moments & dipole transition moments)
 !     QUADRUPOLE (quadrupole moments & quadrupole transition moments)
@@ -1401,30 +1282,24 @@
       else if (inp_compare(.false.,test,'dipole')) then
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         multipole=max(multipole,1)
         if (.not.rtdb_put(rtdb,'tce:multipole',mt_int,1,multipole))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'quadrupole')) then
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         multipole=max(multipole,2)
         if (.not.rtdb_put(rtdb,'tce:multipole',mt_int,1,multipole))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'octupole')) then
         left=.true.
         if (.not.rtdb_put(rtdb,'tce:left',mt_log,1,left))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
         multipole=max(multipole,3)
         if (.not.rtdb_put(rtdb,'tce:multipole',mt_int,1,multipole))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     PROPERTY INPUT SUB-BLOCK
 !
@@ -1437,8 +1312,7 @@
         if (.not.inp_i(tilesize))
      1    call errquit('tce_input: no tilesize given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:tilesize',mt_int,1,tilesize))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     FRAGMENT (if excited state calc, give an atom in an excited fragment)
 !
@@ -1449,21 +1323,18 @@
           fragment=0
         endif
         if (.not.rtdb_put(rtdb,'tce:fragment',mt_int,1,fragment))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     (NO)FOCK (recompute fock for, e.g., DFT, ROHF refs)
 !
       else if (inp_compare(.false.,test,'fock')) then
         recompf=.true.
         if (.not.rtdb_put(rtdb,'tce:recompf',mt_log,1,recompf))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'nofock')) then
         recompf=.false.
         if (.not.rtdb_put(rtdb,'tce:recompf',mt_log,1,recompf))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !    ccsd_act/eomccsd_act
 !
@@ -1471,27 +1342,23 @@
         if (.not.inp_i(oact))
      1    call errquit('tce_input: no oact given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:oact',mt_int,1,oact))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'uact')) then
         if (.not.inp_i(uact))
      1    call errquit('tce_input: no uact given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:uact',mt_int,1,uact))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
       else if (inp_compare(.false.,test,'emin_act')) then
         if (.not.inp_f(emin_act))
      1    call errquit('tce_input: no emin_act given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:eactmin',mt_dbl,1,emin_act))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
       else if (inp_compare(.false.,test,'emax_act')) then
         if (.not.inp_f(emax_act))
      1    call errquit('tce_input: no emax_act given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:eactmax',mt_dbl,1,emax_act))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_OA (Number of active occupied orbitals)
 !
@@ -1499,8 +1366,7 @@
         if (.not.inp_i(oactive(1)))
      1    call errquit('tce_input: no active_oa given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:active_oa',mt_int,1,oactive(1)))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_OB (Number of active occupied orbitals)
 !
@@ -1508,8 +1374,7 @@
         if (.not.inp_i(oactive(2)))
      1    call errquit('tce_input: no active_ob given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:active_ob',mt_int,1,oactive(2)))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_VA (Number of active virtual orbitals)
 !
@@ -1517,8 +1382,7 @@
         if (.not.inp_i(vactive(1)))
      1    call errquit('tce_input: no active_va given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:active_va',mt_int,1,vactive(1)))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_VB (Number of active virtual orbitals)
 !
@@ -1526,8 +1390,7 @@
         if (.not.inp_i(vactive(2)))
      1    call errquit('tce_input: no active_vb given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:active_vb',mt_int,1,vactive(2)))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 !
 !     ACTIVE_EXCIT_LVL (T3 active excitation level)
 !
@@ -1535,13 +1398,11 @@
         if (.not.inp_i(numact))
      1    call errquit('tce_input: no t3a_lvl given',0,INPUT_ERR)
         if (.not.rtdb_put(rtdb,'tce:act_excit_lvl',mt_int,1,numact))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 
       else if (inp_compare(.false.,test,'tcc_spaces')) then
         if (.not.rtdb_put(rtdb,'tce:ltcc',mt_log,1,.true.))
-     1    call errquit('tce_input: failed writing to rtdb',0,
-     2    RTDB_ERR)
+     1    call errquit('tce_input: failed writing to rtdb',0,RTDB_ERR)
 
 !
 !     PRINT
