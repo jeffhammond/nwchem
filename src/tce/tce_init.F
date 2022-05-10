@@ -1049,6 +1049,14 @@ c         endif
      3    call errquit('tce_init: ucc/uccsdt module overridden',0,
      4    UNKNOWN_ERR)
 c ccsd_act/eomccsd_act
+      else if (model.eq.'cc3') then
+!        nointorb=.true.
+        ctype='CC3 approximation to CCSDT'
+        if ((module.ne.'tce').and.
+     1      (module.ne.'ucc').and.
+     2      (module.ne.'uccsdt'))
+     3    call errquit('tce_init: ucc/uccsdt module overridden',0,
+     4    UNKNOWN_ERR)
       else if (model.eq.'ccsd_act') then
         ctype='Coupled-cluster singles & act.doubles'
         if (perturbative.eq.'creom(t)a') then
