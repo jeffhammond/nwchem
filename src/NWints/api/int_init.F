@@ -376,6 +376,7 @@ c
      &    def_cando_hnd.or.def_cando_sim) then
         if (ga_nodeid().eq.0) then
           write(luout,*)' you are trying to turn an integral code on? '
+          write(luout,*)' (hint: use unset instead of setting to true) '
           write(luout,*)' sp  ', def_cando_sp
           write(luout,*)' nw  ', def_cando_nw
           write(luout,*)' txs ', def_cando_txs
