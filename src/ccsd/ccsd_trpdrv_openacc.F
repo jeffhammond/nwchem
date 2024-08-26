@@ -13,7 +13,7 @@
 #include "ccsdps.fh"
 #include "util.fh"
 #include "msgids.fh"
-#include "yflop.fh"
+!#include "yflop.fh"
 !
       double precision, intent(inout) :: emp4,emp5
       double precision, intent(in) :: t1(*)
@@ -707,8 +707,8 @@
                   emp4 = emp4 + emp4k
                   emp5 = emp5 + emp5k
                   if (iprt.gt.50)then
-                     write(6,1234)me,a,j,emp4,emp5
- 1234                format(' me aijk',3i5,2e15.5)
+                     write(6,1234) me,a,j,emp4,emp5
+ 1234                format(' iam aijk',3i5,2e15.5)
                   end if
                   next=nxtask(nodes, 1)
             if(me.eq.0) then

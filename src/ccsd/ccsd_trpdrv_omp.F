@@ -16,7 +16,7 @@ c#define BLAS_THREAD 1
 #include "ccsdps.fh"
 #include "util.fh"
 #include "msgids.fh"
-#include "yflop.fh"
+!#include "yflop.fh"
 !
       double precision, intent(inout) :: emp4,emp5
       double precision, intent(in) :: t1(*)
@@ -56,7 +56,7 @@ c#define BLAS_THREAD 1
 !
       double precision :: emp4i,emp5i,emp4k,emp5k
       double precision :: eaijk,denom
-      integer :: inode,next,nodes,iam
+      integer :: inode,next,nodes,me
       integer :: a,b,c,i,j,k,akold,av
       ! chunking is the loop blocking size in the loop nest
       ! formerly associated with the tengy routine.
@@ -68,9 +68,8 @@ c#define BLAS_THREAD 1
       integer :: klo, khi
       integer nxtask
       external nxtask
-      double precision perfm_flop,tzero,flopzero,t_flops,agg_flops
-      external perfm_flop
-
+      integer :: dgemm_flops, tengy_flops
+      double precision agg_flops
 !
 !  Dependencies (global array, local array, handle):
 !
@@ -112,7 +111,8 @@ c#define BLAS_THREAD 1
       logical i_progr(n_progr+1)
       logical ldyn_org
       logical got_ak
-!
+      ! timers
+      double precision :: tt0, tt1, tc0, tc1
 #if defined(USE_OPENMP)
       integer  omp_get_thread_num
       external omp_get_thread_num
@@ -120,18 +120,24 @@ c#define BLAS_THREAD 1
       external omp_get_num_threads
       integer  omp_get_max_threads
       external omp_get_max_threads
-      if (ga_nodeid().eq.0) write(6,99) omp_get_max_threads()
-   99 format(2x,'Using ',i2,' OpenMP threads in CCSD(T)')
+#endif
+!
+      nodes = ga_nnodes()
+      me = ga_nodeid()
+!
+#if defined(USE_OPENMP)
+      if (me.eq.0) write(6,99) omp_get_max_threads()
 #else
-      if (ga_nodeid().eq.0) then
+      if (me.eq.0) then
         write(6,99) 1
         write(6,999)
       endif
-   99 format(2x,'Using ',i2,' OpenMP thread in CCSD(T)')
   999 format(2x,'Recompile w/ USE_OPENMP=1 to use threads in CCSD(T)')
 #endif
-      tzero=util_wallsec()
-      flopzero=perfm_flop()
+   99 format(2x,'Using ',i2,' OpenMP threads in CCSD(T)')
+      agg_flops = 0
+!
+      tt0 = util_wallsec()
 #ifdef USE_F90_ALLOCATABLE
       allocate( dintc1(1:nvir), dintc2(1:nvir),
      &          dintx1(1:nvir), dintx2(1:nvir),
@@ -146,8 +152,6 @@ c#define BLAS_THREAD 1
       call  util_setthreads_fromenv()
 c      call util_blas_set_num_threads(4)
 #endif
-      nodes = ga_nnodes()
-      iam = ga_nodeid()
 !
 !      call ga_sync() ! ga_sync called just before trpdrv in aoccsd2
 !
@@ -273,6 +277,8 @@ c      call util_blas_set_num_threads(4)
                            call ga_nbwait(nbh_objv7)
                         endif ! k==klo
 
+                        tc0 = util_wallsec()
+
 #if USE_OMP_SECTIONS
 !$omp parallel
 !$omp& shared(eorb)
@@ -365,6 +371,10 @@ c      call util_blas_set_num_threads(4)
 !$omp end sections
 !$omp master
 #endif
+                        ! 8 pairs of DGEMM w/ VVV and VVO cost, 2 for FMA
+                        dgemm_flops = 8*nvir*nvir*(nocc+nvir)*2
+                        agg_flops = agg_flops + dgemm_flops
+
                         if (occsdps) then
                            call pstat_off(ps_doxxx)
                            call pstat_on(ps_tengy)
@@ -381,11 +391,11 @@ c      call util_blas_set_num_threads(4)
      &                                    +eorb(ncor+k) )
 #ifdef USE_YFLOP
       flops_ycount = flops_ycount + nvir*nvir*(
-     D                       3 + 2*(
-     E                       12 +
-     E                       11 +
-     E                       11 ) +
-     5                       2*27 )
+     &                       3 + 2*(
+     &                       12 +
+     &                       11 +
+     &                       11 ) +
+     &                       2*27 )
 #endif
 
 #if USE_OMP_SECTIONS
@@ -447,6 +457,11 @@ c      call util_blas_set_num_threads(4)
 !$omp end do
 !$omp end parallel
 #endif
+               tengy_flops = nvir*nvir*( 3 + 2*( 12 + 11 + 11 ) + 2*27 )
+               agg_flops = agg_flops + tengy_flops
+
+                         tc1 = util_wallsec()
+
                          if (occsdps) then
                             call pstat_off(ps_tengy)
                          else
@@ -462,24 +477,23 @@ c      call util_blas_set_num_threads(4)
                      end do    ! k
                   end do       ! i
                   if (iprt.gt.50)then
-                     write(6,1234)iam,a,j,emp4,emp5
+                     write(6,1234) me,a,j,emp4,emp5
  1234                format(' iam aijk',3i5,2e15.5)
                   end if
                   next=nxtask(nodes, 1)
-            if(ga_nodeid().eq.0) then
+            if(me.eq.0) then
                pct_progr=(a-(ncor+nocc)+((klo-1)/kchunk)*nvir)*n_progr/
-     /          ((nocc/kchunk)*nvir)+1
+     &                   ((nocc/kchunk)*nvir)+1
                if(i_progr(pct_progr)) then
                   i_progr(pct_progr)=.false.
                write(6,4321) ' ccsd(t): done ',
-     A              a-(ncor+nocc)+((klo-1)/kchunk)*nvir,
-     O              ' out of ',(nocc/kchunk)*nvir,
-     O              ' progress: ',
-     O              ((a-(ncor+nocc)+((klo-1)/kchunk)*nvir)*100)/
-     D              ((nocc/kchunk)*nvir),
-     P            '%, Gflops=',(perfm_flop()-flopzero)/
-     D              (util_wallsec()-tzero),
-     P                 ' at ',(util_wallsec()-tzero),' secs'
+     &              a-(ncor+nocc)+((klo-1)/kchunk)*nvir,
+     &              ' out of ',(nocc/kchunk)*nvir,
+     &              ' progress: ',
+     &              ((a-(ncor+nocc)+((klo-1)/kchunk)*nvir)*100)/
+     &              ((nocc/kchunk)*nvir),
+     &            '%, Gflops=',1e-9*(dgemm_flops+tengy_flops)/(tc1-tc0),
+     &                 ' at ',(util_wallsec()-tt0),' secs'
                call util_flush(6)
  4321          format(a,i8,a,i8,a,i3,a,1pg11.4,a,0pf10.1,a)
                endif
@@ -490,13 +504,11 @@ c      call util_blas_set_num_threads(4)
       end do
       call ga_sync()
       next=nxtask(-nodes, 1)
-      t_flops=util_wallsec()-tzero
-      agg_flops=perfm_flop()-flopzero
+      tt1=util_wallsec()
       call ga_dgop(msg_cc_diis1,agg_flops,1, '+')
-      if(ga_nodeid().eq.0) then
+      if(me.eq.0) then
          write(6,4322) ' ccsd(t): 100% done, Aggregate Gflops=',
-     P        agg_flops/t_flops,
-     P                 ' in ',t_flops,' secs'
+     &        1e-9*agg_flops/(tt1-tt0),' in ',(tt1-tt0),' secs'
  4322    format(a,1pg11.4,a,0pf10.1,a)
          call util_flush(6)
       endif
@@ -513,6 +525,7 @@ c     call mkl_set_dynamic(0)
       call util_blas_set_num_threads(1)
 #endif
 !
+      tt0 = util_wallsec()
 #ifdef USE_F90_ALLOCATABLE
       deallocate( dintc1, dintx1, t1v1, dintc2, dintx2, t1v2,
      &            stat=alloc_error)
