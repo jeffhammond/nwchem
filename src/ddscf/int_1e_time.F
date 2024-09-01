@@ -1,31 +1,25 @@
-      subroutine int_1e_time(ibas, jbas, integ_type, oskel)
+      subroutine int_1e_time(ibas, jbas, integ_type)
       implicit none
 #include "errquit.fh"
-#include "cint1cache.fh"
 #include "mafdecls.fh"
-#include "rtdb.fh"
 #include "inp.fh"
-#include "apiP.fh"
 #include "bas.fh"
-#include "cscfps.fh"
-#include "sym.fh"
+#include "util.fh"
 c     
 c     arguments
 c     
       integer ibas, jbas        ! [input] bra and ket basis sets
       character*(*) integ_type  ! [input] Name of integrals to compute
-      logical oskel             ! [input] If true generate symmetry unique list
 c     
 c     local variables
 c     
       integer nshell_i, nshell_j
-      integer ishell, jshell, iproc, nproc, mem1, max1e
-      integer ijshell, ilo, ihi, jlo, jhi, idim
+      integer ishell, jshell, mem1, max1e
+      integer ijshell, ilo, ihi, jlo, jhi
       integer l_buf, l_scr
       integer k_buf, k_scr
       integer type
-      logical odoit
-      integer i, noffset,g_loc
+      double precision :: t0, t1
       if (inp_compare(.false., integ_type, 'kinetic')) then
          type = 1
       else if (inp_compare(.false., integ_type, 'potential')) then
@@ -59,9 +53,11 @@ c
      $     call errquit('int_1e_ga: ma failed', max1e, MA_ERR)
       if (.not. MA_push_get(MT_DBL, mem1,'int_1e_ga:scr',l_scr,k_scr))
      $     call errquit('int_1e_ga: ma failed', mem1, MA_ERR)
+
+      t0 = util_wallsec()
+
       do jshell = 1, nshell_j
          do ishell = 1, nshell_i
-            idim = ihi - ilo + 1
             if (type .eq. 1) then
                call int_1eke (jbas, jshell, ibas, ishell, 
      $              mem1, dbl_mb(k_scr), max1e, dbl_mb(k_buf))
@@ -88,6 +84,10 @@ c
             end if
          end do
       end do
+
+      t1 = util_wallsec()
+      write(6,'(a20,f30.15)') 'int_1e_time: ', t1-t0
+
       if (.not. MA_pop_stack(l_scr)) call errquit
      $     ('pop failed', 0, GA_ERR)
       if (.not. MA_pop_stack(l_buf)) call errquit
