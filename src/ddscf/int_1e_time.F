@@ -5,14 +5,14 @@
 #include "inp.fh"
 #include "bas.fh"
 #include "util.fh"
-c     
-c     arguments
-c     
+!     
+!     arguments
+!     
       integer ibas, jbas        ! [input] bra and ket basis sets
       character*(*) integ_type  ! [input] Name of integrals to compute
-c     
-c     local variables
-c     
+!     
+!     local variables
+!     
       integer nshell_i, nshell_j
       integer ishell, jshell, mem1, max1e
       integer ijshell, ilo, ihi, jlo, jhi
@@ -40,19 +40,19 @@ c
          write(6,*) ' integ_type = ', integ_type
          call errquit('unknown integ_type', 0, INT_ERR)
       end if
-      if (.not. bas_numcont(ibas, nshell_i)) call errquit
-     $     ('bas_numcont failed for ibas', ibas,BASIS_ERR)
-      if (.not. bas_numcont(jbas, nshell_j)) call errquit
-     $     ('bas_numcont failed for jbas', jbas,BASIS_ERR)
+      if (.not. bas_numcont(ibas, nshell_i))
+     $   call errquit('bas_numcont failed for ibas', ibas,BASIS_ERR)
+      if (.not. bas_numcont(jbas, nshell_j))
+     $   call errquit('bas_numcont failed for jbas', jbas,BASIS_ERR)
       call int_mem_1e(max1e, mem1)
       if (type .eq. 5) then  
          max1e = 3*max1e 
          mem1 = 3*mem1 
       endif 
-      if (.not. MA_push_get(MT_DBL,max1e,'int_1e_ga:buf',l_buf,k_buf))
-     $     call errquit('int_1e_ga: ma failed', max1e, MA_ERR)
-      if (.not. MA_push_get(MT_DBL, mem1,'int_1e_ga:scr',l_scr,k_scr))
-     $     call errquit('int_1e_ga: ma failed', mem1, MA_ERR)
+      if (.not. MA_push_get(MT_DBL,max1e,'buf',l_buf,k_buf))
+     $   call errquit('MA failed', max1e, MA_ERR)
+      if (.not. MA_push_get(MT_DBL, mem1,'scr',l_scr,k_scr))
+     $   call errquit('MA failed', mem1, MA_ERR)
 
       t0 = util_wallsec()
 
@@ -88,8 +88,8 @@ c
       t1 = util_wallsec()
       write(6,'(a20,f30.15)') 'int_1e_time: ', t1-t0
 
-      if (.not. MA_pop_stack(l_scr)) call errquit
-     $     ('pop failed', 0, GA_ERR)
-      if (.not. MA_pop_stack(l_buf)) call errquit
-     $     ('pop failed', 0, GA_ERR)
+      if (.not. MA_pop_stack(l_scr)) 
+     $   call errquit('pop failed', 0, GA_ERR)
+      if (.not. MA_pop_stack(l_buf))
+     $   call errquit('pop failed', 0, GA_ERR)
       end
