@@ -86,7 +86,7 @@
       end do
 
       t1 = util_wallsec()
-      write(6,'(a20,f30.15)') 'int_1e_time: ', t1-t0
+      write(6,'(a15,a15,1x,f30.15)') 'int_1e_time: ', integ_type, t1-t0
 
       if (.not. MA_pop_stack(l_scr)) 
      $   call errquit('pop failed', 0, GA_ERR)

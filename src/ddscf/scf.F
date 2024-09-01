@@ -246,6 +246,13 @@ c
       if ((nbf*nbf*3*8)/ga_nnodes() .lt. 2000000) ! Cache 1e if < 2MB/node
      $     call int_1e_cache_ga(basis, oskel)
 c
+      if (ga_nodeid().eq.0) then
+          print*,'JEFF'
+          call int_1e_time(basis,basis,'kinetic')
+          call int_1e_time(basis,basis,'potential')
+          call int_1e_time(basis,basis,'overlap')
+      endif
+c
 c     Form intial guess vectors
 c
       if (ga_nodeid().eq.0 .and. oprint) write(6,711) util_wallsec()
