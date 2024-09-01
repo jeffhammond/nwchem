@@ -49,7 +49,7 @@
 	fock_2e_cam.o ga_get2eri.o scf_frozemb.o print_integrals.o \
 	rohf_hessv2_ext.o rohf_hessv3_ext.o uhf_hessv2_ext.o uhf_precond_ext.o \
 	scf_dump_evp_input.o \
-	cosmo_fock.o
+	cosmo_fock.o int_1e_time.o
 
 
  OBJ_OPTIMIZE = \
