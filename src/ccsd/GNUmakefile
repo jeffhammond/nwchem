@@ -77,6 +77,7 @@ endif
      ccsd_sortmo.F \
      ccsd_trpdrv.F \
      ccsd_trpdrv_omp.F \
+     ccsd_trpdrv_omp2.F \
      ccsd_trpdrv_omp_mixprec.F \
      moints_trp.F \
      ccsd_zvecs.F \
