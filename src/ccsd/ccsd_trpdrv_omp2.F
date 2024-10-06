@@ -190,16 +190,16 @@
      &                    j*nvir+(i-1)*lnov,av,av,Djia,nvir,nbh_objv5)
                      call ga_nbget(g_objo,(i-1)*lnvv+1,i*lnvv,j,j,Tij,
      &                    lnvv,nbh_objo4)
-                     call ga_nbget(g_objo,lnovv+(i-1)*lnov+1,
-     &                    lnovv+i*lnov,j,j,Jij,lnov,nbh_objo5)
-                     call ga_nbget(g_objo,lnovv+lnoov+(i-1)*lnov+1,
-     &                    lnovv+lnoov+i*lnov,j,j,Kij,lnov,nbh_objo6)
                      call ga_nbget(g_coul,1,lnvv,(a-oseg_lo)*nocc+i,
      &                    (a-oseg_lo)*nocc+i,Jia,lnvv,nbh_coul2)
                      call ga_nbget(g_exch,1,lnvv,(a-oseg_lo)*nocc+i,
      &                    (a-oseg_lo)*nocc+i,Kia,lnvv,nbh_exch2)
+                     call ga_nbget(g_objo,lnovv+(i-1)*lnov+1,
+     &                    lnovv+i*lnov,j,j,Jij,lnov,nbh_objo5)
                      call ga_nbget(g_objv,1+lnoov+(i-1)*lnov,
      &                    lnoov+i*lnov,av,av,Tia,lnov,nbh_objv6)
+                     call ga_nbget(g_objo,lnovv+lnoov+(i-1)*lnov+1,
+     &                    lnovv+lnoov+i*lnov,j,j,Kij,lnov,nbh_objo6)
                      call ga_nbget(g_objv,1+2*lnoov+(i-1)*lnov,
      &                    2*lnoov+i*lnov,av,av,Xia,lnov,nbh_objv7)
 
@@ -230,83 +230,94 @@
                         endif
 !
 !  These are the input dependencies for the DGEMM calls below.
-!  We wait on all of them here because GA is not even remotely thread-safe.
-!  All of these are independent of k, so we wait on them only
-!  at the first trip of the loop.
 !
                         if (k.eq.klo) then
                            if (i.eq.1) then
                               if (got_ak) then
-                                 call ga_nbwait(nbh_exch1)
-                                 call ga_nbwait(nbh_coul1)
-                                 call ga_nbwait(nbh_objv2)
-                                 call ga_nbwait(nbh_objv3)
+                                 call ga_nbwait(nbh_exch1)  !      g_exch, Kka,  nbh_exch1
+                                 call ga_nbwait(nbh_coul1)  !      g_coul, Jka,  nbh_coul1
                               endif ! got_ak
-                              call ga_nbwait(nbh_objo1)
-                              call ga_nbwait(nbh_objo2)
-                              call ga_nbwait(nbh_objo3)
+                              call ga_nbwait(nbh_objo1)     !      g_objo, Tkj,  nbh_objo1
                            endif ! i==1
-                           call ga_nbwait(nbh_objo4)
-                           call ga_nbwait(nbh_objo5)
-                           call ga_nbwait(nbh_objo6)
-                           call ga_nbwait(nbh_coul2)
-                           call ga_nbwait(nbh_exch2)
-                           call ga_nbwait(nbh_objv6)
-                           call ga_nbwait(nbh_objv7)
+                           call ga_nbwait(nbh_objo4)        !      g_objo, Tij,  nbh_objo4
+                           call ga_nbwait(nbh_coul2)        !      g_coul, Jia,  nbh_coul2
+                           call ga_nbwait(nbh_exch2)        !      g_exch, Kia,  nbh_exch2
                         endif ! k==klo
 
+                        ! Jia Kia Jka Kka x Tij Tkj
                         call dgemm('n','t',nvir,nvir,nvir,1.0d0,
      1                       Jia,nvir,Tkj(1+(k-klo)*lnvv),nvir,0.0d0,
      2                       f1n,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Tia,nvir,Kkj(1+(k-klo)*lnov),nocc,1.0d0,
-     2                       f1n,nvir)
-
                         call dgemm('n','t',nvir,nvir,nvir,1.0d0,
      1                       Kia,nvir,Tkj(1+(k-klo)*lnvv),nvir,0.0d0,
      2                       f2n,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Xia,nvir,Kkj(1+(k-klo)*lnov),nocc,1.0d0,
-     2                       f2n,nvir)
-
                         call dgemm('n','n',nvir,nvir,nvir,1.0d0,
      1                       Jia,nvir,Tkj(1+(k-klo)*lnvv),nvir,0.0d0,
      2                       f3n,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Tia,nvir,Jkj(1+(k-klo)*lnov),nocc,1.0d0,
-     2                       f3n,nvir)
-
                         call dgemm('n','n',nvir,nvir,nvir,1.0d0,
      1                       Kia,nvir,Tkj(1+(k-klo)*lnvv),nvir,0.0d0,
      2                       f4n,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Xia,nvir,Jkj(1+(k-klo)*lnov),nocc,1.0d0,
-     2                       f4n,nvir)
-
                         call dgemm('n','t',nvir,nvir,nvir,1.0d0,
      1                       Jka(1+(k-klo)*lnvv),nvir,Tij,nvir,0.0d0,
      2                       f1t,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Tka(1+(k-klo)*lnov),nvir,Kij,nocc,1.0d0,
-     2                       f1t,nvir)
-
                         call dgemm('n','t',nvir,nvir,nvir,1.0d0,
      1                       Kka(1+(k-klo)*lnvv),nvir,Tij,nvir,0.0d0,
      2                       f2t,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Xka(1+(k-klo)*lnov),nvir,Kij,nocc,1.0d0,
-     2                       f2t,nvir)
-
                         call dgemm('n','n',nvir,nvir,nvir,1.0d0,
      1                       Jka(1+(k-klo)*lnvv),nvir,Tij,nvir,0.0d0,
      2                       f3t,nvir)
-                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
-     1                       Tka(1+(k-klo)*lnov),nvir,Jij,nocc,1.0d0,
-     2                       f3t,nvir)
-
                         call dgemm('n','n',nvir,nvir,nvir,1.0d0,
      1                       Kka(1+(k-klo)*lnvv),nvir,Tij,nvir,0.0d0,
      2                       f4t,nvir)
+!
+!  These are the input dependencies for the DGEMM calls below.
+!
+                        if (k.eq.klo) then
+                           if (i.eq.1) then
+                              call ga_nbwait(nbh_objo2)     !      g_objo, Jkj,  nbh_objo2
+                              call ga_nbwait(nbh_objo3)     !      g_objo, Kkj,  nbh_objo3
+                           endif ! i==1
+                           call ga_nbwait(nbh_objo6)        !      g_objv, Tia,  nbh_objv6
+                           call ga_nbwait(nbh_objv7)        !      g_objv, Xia,  nbh_objv7
+                        endif ! k==klo
+
+                        ! Tia Xia x Kkj Jkj
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Tia,nvir,Kkj(1+(k-klo)*lnov),nocc,1.0d0,
+     2                       f1n,nvir)
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Xia,nvir,Kkj(1+(k-klo)*lnov),nocc,1.0d0,
+     2                       f2n,nvir)
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Tia,nvir,Jkj(1+(k-klo)*lnov),nocc,1.0d0,
+     2                       f3n,nvir)
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Xia,nvir,Jkj(1+(k-klo)*lnov),nocc,1.0d0,
+     2                       f4n,nvir)
+!
+!  These are the input dependencies for the DGEMM calls below.
+!
+                        if (k.eq.klo) then
+                           if (i.eq.1) then
+                              if (got_ak) then
+                                 call ga_nbwait(nbh_objv2)  !      g_objv, Tka,  nbh_objv2
+                                 call ga_nbwait(nbh_objv3)  !      g_objv, Xka,  nbh_objv3
+                              endif ! got_ak
+                           endif ! i==1
+                           call ga_nbwait(nbh_objo5)        !      g_objo, Jij,  nbh_objo5
+                           call ga_nbwait(nbh_objv6)        !      g_objo, Kij,  nbh_objo6
+                        endif ! k==klo
+
+                        ! Tka Xka x Kij Jij
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Tka(1+(k-klo)*lnov),nvir,Kij,nocc,1.0d0,
+     2                       f1t,nvir)
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Xka(1+(k-klo)*lnov),nvir,Kij,nocc,1.0d0,
+     2                       f2t,nvir)
+                        call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
+     1                       Tka(1+(k-klo)*lnov),nvir,Jij,nocc,1.0d0,
+     2                       f3t,nvir)
                         call dgemm('n','n',nvir,nvir,nocc,-1.0d0,
      1                       Xka(1+(k-klo)*lnov),nvir,Jij,nocc,1.0d0,
      2                       f4t,nvir)

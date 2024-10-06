@@ -1007,7 +1007,7 @@ c
          else if (use_trpdrv_omp2) then
 c
          if (iam.eq.0.and.oprint) then
-            write(luout,1848) nvpass,util_wallsec()
+            write(luout,1849) nvpass,util_wallsec()
             call util_flush(luout)
          endif
  1849    format(' commencing triples evaluation - OpenMP 2 version',i8,
