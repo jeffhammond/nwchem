@@ -29,6 +29,7 @@ endif
 	ccsd_tengy.o \
         ccsd_trpdrv.o \
         ccsd_trpdrv_omp.o \
+        ccsd_trpdrv_omp2.o \
 	ccsd_trpdrv_omp_mixprec.o \
         moints_trp.o \
         ccsd.o \

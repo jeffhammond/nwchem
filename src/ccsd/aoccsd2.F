@@ -19,6 +19,7 @@ c
       Integer RTDB, geom
       logical oconverged, occd
       logical use_trpdrv_omp
+      logical use_trpdrv_omp2
       logical use_trpdrv_omp_mp
       logical use_trpdrv_openmp_imax
       logical use_trpdrv_openacc
@@ -720,6 +721,9 @@ C
       if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_omp', mt_log, 1,
      1                   use_trpdrv_omp))
      2    use_trpdrv_omp=.false.
+      if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_omp2', mt_log, 1,
+     1                   use_trpdrv_omp2))
+     2    use_trpdrv_omp2=.false.
       if (.not. rtdb_get(rtdb, 'ccsd:use_trpdrv_omp_mp', mt_log, 1,
      1                   use_trpdrv_omp_mp))
      2    use_trpdrv_omp_mp=.false.
@@ -985,6 +989,30 @@ c
  1848    format(' commencing triples evaluation - OpenMP version',i8,
      I        ' at ',f20.2,' secs')
          call ccsd_trpdrv_omp(dbl_mb(k_t1),
+#ifdef USE_F90_ALLOCATABLE
+     $        f1n,f1t,f2n,f2t,f3n,f3t,f4n,f4t,
+#else
+     $        dbl_mb(k_f1n),dbl_mb(k_f1t),dbl_mb(k_f2n),dbl_mb(k_f2t),
+     $        dbl_mb(k_f3n),dbl_mb(k_f3t),dbl_mb(k_f4n),dbl_mb(k_f4t),
+#endif
+     $        eorb,g_objo,g_objv,g_coul,g_exch,ncor,nocc,nvir,iprt,
+     $        empt(1),empt(2),oseg_lo,oseg_hi,kchunk,
+     $        dbl_mb(k_trp_Tij), dbl_mb(k_trp_Tkj), dbl_mb(k_trp_Tia),
+     $        dbl_mb(k_trp_Tka), dbl_mb(k_trp_Xia), dbl_mb(k_trp_Xka),
+     $        dbl_mb(k_trp_Jia), dbl_mb(k_trp_Jka), dbl_mb(k_trp_Kia),
+     $        dbl_mb(k_trp_Kka), dbl_mb(k_trp_Jij), dbl_mb(k_trp_Jkj),
+     $        dbl_mb(k_trp_Kij), dbl_mb(k_trp_Kkj), dbl_mb(k_trp_Dja),
+     $        dbl_mb(k_trp_Djka), dbl_mb(k_trp_Djia))
+c
+         else if (use_trpdrv_omp2) then
+c
+         if (iam.eq.0.and.oprint) then
+            write(luout,1848) nvpass,util_wallsec()
+            call util_flush(luout)
+         endif
+ 1849    format(' commencing triples evaluation - OpenMP 2 version',i8,
+     I        ' at ',f20.2,' secs')
+         call ccsd_trpdrv_omp2(dbl_mb(k_t1),
 #ifdef USE_F90_ALLOCATABLE
      $        f1n,f1t,f2n,f2t,f3n,f3t,f4n,f4t,
 #else
