@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ex
+
 ARMCI_MPI_TARBALL=$1
 
 export NWCHEM_TOP=${NWCHEM_TOP:-"`pwd`/../../"}
@@ -109,3 +111,4 @@ echo "Please set the following environment variables when you build NWChem:"
 echo "ARMCI_NETWORK=ARMCI"
 echo "EXTERNAL_ARMCI_PATH=${NWCHEM_TOP}/external-armci"
 
+set +ex
