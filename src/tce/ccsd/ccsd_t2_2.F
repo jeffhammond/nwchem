@@ -929,110 +929,113 @@ C     i2 ( h10 h11 h1 h2 )_vt + = -1/2 * Sum ( p7 p8 ) * t ( p7 p8 h1 h2 )_t * v
       count = 0
       next = NXTASK(nprocs, 1)
       DO h10b = 1,noab
-      DO h11b = h10b,noab
-      DO h1b = 1,noab
-      DO h2b = h1b,noab
-      IF ((.not.restricted).or.(int_mb(k_spin+h10b-1)+int_mb(k_spin+h11b
-     &-1)+int_mb(k_spin+h1b-1)+int_mb(k_spin+h2b-1).ne.8)) THEN
-      IF (int_mb(k_spin+h10b-1)+int_mb(k_spin+h11b-1) .eq. int_mb(k_spin
-     &+h1b-1)+int_mb(k_spin+h2b-1)) THEN
-      IF (ieor(int_mb(k_sym+h10b-1),ieor(int_mb(k_sym+h11b-1),ieor(int_m
-     &b(k_sym+h1b-1),int_mb(k_sym+h2b-1)))) .eq. ieor(irrep_v,irrep_t)) 
-     &THEN
-      IF (next.eq.count) THEN
-      dimc = int_mb(k_range+h10b-1) * int_mb(k_range+h11b-1) * int_mb(k_
-     &range+h1b-1) * int_mb(k_range+h2b-1)
-      IF (.not.MA_PUSH_GET(mt_dbl,dimc,'cs',l_cs,k_cs)) CALL
-     & ERRQUIT('ccsd_t2_2_2_3',0,MA_ERR)
-      CALL DFILL(dimc,0.0d0,dbl_mb(k_cs),1)
-      DO p7b = noab+1,noab+nvab
-      DO p8b = p7b,noab+nvab
-      IF (int_mb(k_spin+p7b-1)+int_mb(k_spin+p8b-1) .eq. int_mb(k_spin+h
-     &1b-1)+int_mb(k_spin+h2b-1)) THEN
-      IF (ieor(int_mb(k_sym+p7b-1),ieor(int_mb(k_sym+p8b-1),ieor(int_mb(
-     &k_sym+h1b-1),int_mb(k_sym+h2b-1)))) .eq. irrep_t) THEN
-      CALL TCE_RESTRICTED_4(p7b,p8b,h1b,h2b,p7b_1,p8b_1,h1b_1,h2b_1)
-      CALL TCE_RESTRICTED_4(h10b,h11b,p7b,p8b,h10b_2,h11b_2,p7b_2,p8b_2)
-      dim_common = int_mb(k_range+p7b-1) * int_mb(k_range+p8b-1)
-      dima_sort = int_mb(k_range+h1b-1) * int_mb(k_range+h2b-1)
-      dima = dim_common * dima_sort
-      dimb_sort = int_mb(k_range+h10b-1) * int_mb(k_range+h11b-1)
-      dimb = dim_common * dimb_sort
-      IF ((dima .gt. 0) .and. (dimb .gt. 0)) THEN
-      IF (.not.MA_PUSH_GET(mt_dbl,dima,'as',l_as,k_as)) CALL
-     & ERRQUIT('ccsd_t2_2_2_3',1,MA_ERR)
-      IF (.not.MA_PUSH_GET(mt_dbl,dima,'a',l_a,k_a)) CALL ERRQUIT('
-     &ccsd_t2_2_2_3',2,MA_ERR)
-      CALL GET_HASH_BLOCK(d_a,dbl_mb(k_a),dima,int_mb(k_a_offset),(h2b_1
-     & - 1 + noab * (h1b_1 - 1 + noab * (p8b_1 - noab - 1 + nvab * (p7b_
-     &1 - noab - 1)))))
-      CALL TCE_SORT_4(dbl_mb(k_a),dbl_mb(k_as),int_mb(k_range+p7b-1)
-     &,int_mb(k_range+p8b-1),int_mb(k_range+h1b-1),int_mb(k_range+h2b-1)
-     &,4,3,2,1,1.0d0)
-      IF (.not.MA_POP_STACK(l_a)) CALL ERRQUIT('ccsd_t2_2_2_3',3,MA_ERR)
-      IF (.not.MA_PUSH_GET(mt_dbl,dimb,'bs',l_bs,k_bs)) CALL
-     & ERRQUIT('ccsd_t2_2_2_3',4,MA_ERR)
-      IF (.not.MA_PUSH_GET(mt_dbl,dimb,'b',l_b,k_b)) CALL ERRQUIT('
-     &ccsd_t2_2_2_3',5,MA_ERR)
-      if(.not.intorb) then
-      CALL GET_HASH_BLOCK(d_b,dbl_mb(k_b),dimb,int_mb(k_b_offset),(p8b_2
-     & - 1 + (noab+nvab) * (p7b_2 - 1 + (noab+nvab) * (h11b_2 - 1 + (noa
-     &b+nvab) * (h10b_2 - 1)))))
-      else
-      CALL GET_HASH_BLOCK_I(d_b,dbl_mb(k_b),dimb,int_mb(k_b_offset),
-     &(p8b_2
-     & - 1 + (noab+nvab) * (p7b_2 - 1 + (noab+nvab) * (h11b_2 - 1 + (noa
-     &b+nvab) * (h10b_2 - 1)))),p8b_2,p7b_2,h11b_2,h10b_2)
-      end if
-      CALL TCE_SORT_4(dbl_mb(k_b),dbl_mb(k_bs),int_mb(k_range+h10b-1
-     &),int_mb(k_range+h11b-1),int_mb(k_range+p7b-1),int_mb(k_range+p8b-
-     &1),2,1,4,3,1.0d0)
-      IF (.not.MA_POP_STACK(l_b)) CALL ERRQUIT('ccsd_t2_2_2_3',6,MA_ERR)
-      nsuperp(1) = 1
-      nsuperp(2) = 1
-      isuperp = 1
-      IF (p7b .eq. p8b) THEN
-      nsuperp(isuperp) = nsuperp(isuperp) + 1
-      ELSE
-      isuperp = isuperp + 1
-      END IF
-      CALL DGEMM('T','N',dima_sort,dimb_sort,dim_common,2.0d0/FACTORIAL(
-     &nsuperp(1))/FACTORIAL(nsuperp(2)),dbl_mb(k_as),dim_common,dbl_
-     &mb(k_bs),dim_common,1.0d0,dbl_mb(k_cs),dima_sort)
-      IF (.not.MA_POP_STACK(l_bs)) CALL ERRQUIT('ccsd_t2_2_2_3',7,MA
-     &_ERR)
-      IF (.not.MA_POP_STACK(l_as)) CALL ERRQUIT('ccsd_t2_2_2_3',8,MA
-     &_ERR)
-      END IF
-      END IF
-      END IF
-      END DO
-      END DO
-      IF (.not.MA_PUSH_GET(mt_dbl,dimc,'c',l_c,k_c)) CALL ERRQUIT('
-     &ccsd_t2_2_2_3',9,MA_ERR)
-      CALL TCE_SORT_4(dbl_mb(k_cs),dbl_mb(k_c),int_mb(k_range+h11b-1
-     &),int_mb(k_range+h10b-1),int_mb(k_range+h2b-1),int_mb(k_range+h1b-
-     &1),2,1,4,3,-1.0d0/2.0d0)
-      CALL ADD_HASH_BLOCK(d_c,dbl_mb(k_c),dimc,int_mb(k_c_offset),(h2b -
-     & 1 + noab * (h1b - 1 + noab * (h11b - 1 + noab * (h10b - 1)))))
-      IF (.not.MA_POP_STACK(l_c)) CALL ERRQUIT('ccsd_t2_2_2_3',10,MA_ERR
-     &)
-      IF (.not.MA_POP_STACK(l_cs)) CALL ERRQUIT('ccsd_t2_2_2_3',11,M
-     &A_ERR)
-      next = NXTASK(nprocs, 1)
-      END IF
-      count = count + 1
-      END IF
-      END IF
-      END IF
-      END DO
-      END DO
-      END DO
+       DO h11b = h10b,noab
+        DO h1b = 1,noab
+         DO h2b = h1b,noab
+          IF ((.not.restricted).or.
+     &        ( int_mb(k_spin+h10b-1)+int_mb(k_spin+h11b-1)
+     &         +int_mb(k_spin+h1b-1)+int_mb(k_spin+h2b-1).ne.8)) THEN
+           IF (int_mb(k_spin+h10b-1)+int_mb(k_spin+h11b-1) .eq.
+     &         int_mb(k_spin+h1b-1)+int_mb(k_spin+h2b-1)) THEN
+            IF (ieor(int_mb(k_sym+h10b-1),ieor(int_mb(k_sym+h11b-1),
+     &          ieor(int_mb(k_sym+h1b-1),int_mb(k_sym+h2b-1))))
+     &                 .eq. ieor(irrep_v,irrep_t)) THEN
+             IF (next.eq.count) THEN
+              dimc = int_mb(k_range+h10b-1) * int_mb(k_range+h11b-1)
+     &             * int_mb(k_range+h1b-1) * int_mb(k_range+h2b-1)
+              IF (.not.MA_PUSH_GET(mt_dbl,dimc,'cs',l_cs,k_cs)) 
+     &          CALL ERRQUIT('ccsd_t2_2_2_3',0,MA_ERR)
+              CALL DFILL(dimc,0.0d0,dbl_mb(k_cs),1)
+              DO p7b = noab+1,noab+nvab
+               DO p8b = p7b,noab+nvab
+                IF (int_mb(k_spin+p7b-1)+int_mb(k_spin+p8b-1) .eq.
+     &              int_mb(k_spin+h1b-1)+int_mb(k_spin+h2b-1)) THEN
+                 IF (ieor(int_mb(k_sym+p7b-1),ieor(int_mb(k_sym+p8b-1),
+     &               ieor(int_mb(k_sym+h1b-1),int_mb(k_sym+h2b-1))))
+     &                      .eq. irrep_t) THEN
+                  CALL TCE_RESTRICTED_4(p7b,p8b,h1b,h2b,
+     &                                  p7b_1,p8b_1,h1b_1,h2b_1)
+                  CALL TCE_RESTRICTED_4(h10b,h11b,p7b,p8b,
+     &                                  h10b_2,h11b_2,p7b_2,p8b_2)
+                  dim_common = int_mb(k_range+p7b-1) * int_mb(k_range+p8b-1)
+                  dima_sort = int_mb(k_range+h1b-1) * int_mb(k_range+h2b-1)
+                  dimb_sort = int_mb(k_range+h10b-1) * int_mb(k_range+h11b-1)
+                  dima = dim_common * dima_sort
+                  dimb = dim_common * dimb_sort
+                  IF ((dima .gt. 0) .and. (dimb .gt. 0)) THEN
+                   !IF (.not.MA_PUSH_GET(mt_dbl,dima,'as',l_as,k_as)) CALL ERRQUIT('ccsd_t2_2_2_3',1,MA_ERR)
+                   !IF (.not.MA_PUSH_GET(mt_dbl,dima,'a',l_a,k_a)) CALL ERRQUIT('ccsd_t2_2_2_3',2,MA_ERR)
+                   CALL GET_HASH_BLOCK(d_a,dbl_mb(k_a),dima,int_mb(k_a_offset),
+     &                                 (h2b_1-1+noab*(h1b_1-1+noab*
+     &                                 (p8b_1-noab-1+nvab*(p7b_1-noab-1)))))
+                   CALL TCE_SORT_4(dbl_mb(k_a),dbl_mb(k_as),
+     &                             int_mb(k_range+p7b-1),int_mb(k_range+p8b-1),
+     &                             int_mb(k_range+h1b-1),int_mb(k_range+h2b-1),
+     &                             4,3,2,1,1.0d0)
+                   !IF (.not.MA_POP_STACK(l_a)) CALL ERRQUIT('ccsd_t2_2_2_3',3,MA_ERR)
+                   !IF (.not.MA_PUSH_GET(mt_dbl,dimb,'bs',l_bs,k_bs)) CALL ERRQUIT('ccsd_t2_2_2_3',4,MA_ERR)
+                   !IF (.not.MA_PUSH_GET(mt_dbl,dimb,'b',l_b,k_b)) CALL ERRQUIT('ccsd_t2_2_2_3',5,MA_ERR)
+                   if(.not.intorb) then
+                    CALL GET_HASH_BLOCK(d_b,dbl_mb(k_b),dimb,int_mb(k_b_offset),
+     &                                 (p8b_2-1+(noab+nvab)*(p7b_2-1+(noab+nvab)
+     &                                 *(h11b_2-1+(noab+nvab)*(h10b_2-1)))))
+                   else
+                    CALL GET_HASH_BLOCK_I(d_b,dbl_mb(k_b),dimb,
+     &                                   int_mb(k_b_offset),
+     &                                   (p8b_2-1+(noab+nvab)*(p7b_2-1
+     &                                   +(noab+nvab)*(h11b_2-1+(noab+nvab)*
+     &                                   (h10b_2-1)))),
+     &                                   p8b_2,p7b_2,h11b_2,h10b_2)
+                   end if
+                   CALL TCE_SORT_4(dbl_mb(k_b),dbl_mb(k_bs),
+     &                            int_mb(k_range+h10b-1),int_mb(k_range+h11b-1),
+     &                            int_mb(k_range+p7b-1),int_mb(k_range+p8b-1),
+     &                            2,1,4,3,1.0d0)
+                   !IF (.not.MA_POP_STACK(l_b)) CALL ERRQUIT('ccsd_t2_2_2_3',6,MA_ERR)
+                   nsuperp(1) = 1
+                   nsuperp(2) = 1
+                   isuperp = 1
+                   IF (p7b .eq. p8b) THEN
+                    nsuperp(isuperp) = nsuperp(isuperp) + 1
+                   ELSE
+                    isuperp = isuperp + 1
+                   END IF
+                   CALL DGEMM('T','N',dima_sort,dimb_sort,dim_common,
+     &                        2.0d0/FACTORIAL(nsuperp(1))/FACTORIAL(nsuperp(2)),
+     &                        dbl_mb(k_as),dim_common,dbl_mb(k_bs),dim_common,
+     &                        1.0d0,dbl_mb(k_cs),dima_sort)
+                   !IF (.not.MA_POP_STACK(l_bs)) CALL ERRQUIT('ccsd_t2_2_2_3',7,MA_ERR)
+                   !IF (.not.MA_POP_STACK(l_as)) CALL ERRQUIT('ccsd_t2_2_2_3',8,MA_ERR)
+                  END IF
+                 END IF
+                END IF
+               END DO
+              END DO
+              !IF (.not.MA_PUSH_GET(mt_dbl,dimc,'c',l_c,k_c)) CALL ERRQUIT('ccsd_t2_2_2_3',9,MA_ERR)
+              CALL TCE_SORT_4(dbl_mb(k_cs),dbl_mb(k_c),
+     &                        int_mb(k_range+h11b-1),int_mb(k_range+h10b-1),
+     &                        int_mb(k_range+h2b-1),int_mb(k_range+h1b-1),
+     &                        2,1,4,3,-1.0d0/2.0d0)
+              CALL ADD_HASH_BLOCK(d_c,dbl_mb(k_c),dimc,int_mb(k_c_offset),
+     &                            (h2b-1+noab*(h1b-1+noab*(h11b-1+noab*
+     &                            (h10b-1)))))
+              !IF (.not.MA_POP_STACK(l_c)) CALL ERRQUIT('ccsd_t2_2_2_3',10,MA_ERR)
+              !IF (.not.MA_POP_STACK(l_cs)) CALL ERRQUIT('ccsd_t2_2_2_3',11,MA_ERR)
+              next = NXTASK(nprocs, 1)
+             END IF
+             count = count + 1
+            END IF
+           END IF
+          END IF
+         END DO
+        END DO
+       END DO
       END DO
       next = NXTASK(-nprocs, 1)
       call GA_SYNC()
       RETURN
       END
+
       SUBROUTINE ccsd_t2_2_3(d_a,k_a_offset,d_b,k_b_offset,d_c,k_c_offse
      &t)
 C     $Id$
