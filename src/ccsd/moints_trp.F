@@ -161,7 +161,7 @@ c
           if (.not.ga_create(MT_DBL,nbf,nmo,'tmp',nbf,0,g_tmp))
      $      call errquit('moints_trp: cannot ga_create tmp',0, GA_ERR)
           if (ga_nodeid() .eq. 0) call ga_put(g_tmp,1,nbf,1,nmo,cmo,nbf)
-	  call ga_sync
+          call ga_sync()
           call sym_movecs_adapt( basis, 1d-8, g_tmp,
      $                            int_mb(k_sym), nmixed )
           call ga_get(g_tmp,1,nbf,1,nmo,cmo,nbf)
@@ -236,7 +236,7 @@ c
        if (oexch) call ga_zero(g_exch)
        if (ocoul) call ga_zero(g_coul)
 
-       call ga_sync
+       call ga_sync()
        do ish0=1,n_progr+1
           i_progr(ish0)=.true.
        enddo
@@ -435,7 +435,7 @@ c
      $                       osym, int_mb(k_sym) )
        endif
 
-       call ga_sync
+       call ga_sync()
 
 *       d1 = ga_ddot(g_coul,g_coul)
 *       d2 = ga_ddot(g_exch,g_exch)
@@ -493,7 +493,6 @@ c
        integer aoff,nni,nnj,ab,ivlo,ivhi,jvlo,jvhi,ofroz
        integer ssij,ain,olb
        integer a,b,i,j,v
-       double precision cc
 c
        ofroz = ostart - 1
        ssij = (ihi - ilo + 1)*(jhi - jlo + 1)
@@ -509,58 +508,28 @@ cedo       do a=olo,ohi
 cstaggering to avoid congestion in ga-acc
        olb=ohi-olo+1
        do ain=ga_nodeid()+1,ga_nodeid()+olb
-          a=mod(ain,olb)+olo
+         a=mod(ain,olb)+olo
          call dgemm('t', 'n', nvir, ssij, nbf, 1.d0,
      $               xc(1,vlo), nbf, ssni(1,jlo,ilo,a),
      $               nbf, 0.d0, ssv, nvir )
 ! scale=1.0 is the common case, scale=0.5 is exception on i=j
          do b=ostart,ostart+nocc-1
            call dfill(nni,0.d0,h1,1)
-! this could be DGEMV if ssv(v,j,i) is transposed to ssv2(v,i,j)
-! in the current form, we can use a loop over range(i) DAXPYs
-#if USE_BLAS_NOT_LOOPS
-             do j=jlo,jhi
-               do i=ilo,ihi
-                  call daxpy(nvir,scale*c(j,b),ssv(1,j,i),1,h1(1,i),1)
-               enddo
-             enddo
-#elif USE_NEW_LOOPS
-           this code is not correct
-           if (abs(scale-1.0d0).lt.(1.e-13)) then
-             do j=jlo,jhi
-               do i=ilo,ihi
-                 do v=1,nvir
-                   h1(v,i) = h1(v,i) + c(j,b)*ssv(v,j,i)
-                 enddo
-               enddo
-             enddo
-           else ! scale .ne. 1.0
-             do j=jlo,jhi
-               do i=ilo,ihi
-                 do v=1,nvir
-                   h1(v,i) = h1(v,i) + scale*c(j,b)*ssv(v,j,i)
-                 enddo
-               enddo
-             enddo
-           endif
-#else
 #ifdef USE_YFLOP
-      flops_ycount = flops_ycount + nnj*(ihi-ilo+1)*3
+           flops_ycount = flops_ycount + nnj*(ihi-ilo+1)*3
 #endif
            do j=jlo,jhi
-             cc = c(j,b)
              do i=ilo,ihi
                do v=1,nvir
-                 h1(v,i) = h1(v,i) + scale*cc*ssv(v,j,i)
+                 h1(v,i) = h1(v,i) + scale*c(j,b)*ssv(v,j,i)
                enddo
              enddo
            enddo
-#endif
 #ifndef NOCOMMS
            ab = (a-olo)*nocc+b-ostart+1
 #ifdef ACC_STRIPS
            call util_gacc_strips(g_exch,ivlo,ivhi,ab,ab,h1,nni,1.d0,
-     X          nvir)
+     &                           nvir)
 #else           
            call ga_acc(g_exch,ivlo,ivhi,ab,ab,h1,nni,1.d0)
 #endif
@@ -568,58 +537,23 @@ cstaggering to avoid congestion in ga-acc
          enddo
          do b=ostart,ostart+nocc-1
            call dfill(nnj,0.d0,h2,1)
-! this is a DGEMV call of the form
-! h2(vj) += cb(i) * ssv(vj,i)
-! where we fuse vj=j*vdim+v
-! and set cb(:) = c(:,b)
-#if USE_BLAS_NOT_LOOPS
-! TODO: actually use DGEMV here
-          do i=ilo,ihi
-            do j=jlo,jhi
-              do v=1,nvir
-                h2(v,j) = h2(v,j) + scale*c(i,b)*ssv(v,j,i)
-              enddo
-            enddo
-          enddo
-#elif USE_NEW_LOOPS
-          this code is not correct
-          if (abs(scale-1.0d0).lt.(1.e-13)) then
-            do i=ilo,ihi
-              do j=jlo,jhi
-                do v=1,nvir
-                  h2(v,j) = h2(v,j) + c(i,b)*ssv(v,j,i)
-                enddo
-              enddo
-            enddo
-          else ! scale .ne. 1.0
-            do i=ilo,ihi
-              do j=jlo,jhi
-                do v=1,nvir
-                  h2(v,j) = h2(v,j) + scale*c(i,b)*ssv(v,j,i)
-                enddo
-              enddo
-            enddo
-          endif
-#else
 #ifdef USE_YFLOP
-      flops_ycount = flops_ycount + nnj*(ihi-ilo+1)*3
+           flops_ycount = flops_ycount + nnj*(ihi-ilo+1)*3
 #endif
-          do i=ilo,ihi
-            cc = c(i,b)
-            do j=jlo,jhi
-              do v=1,nvir
-                h2(v,j) = h2(v,j) + scale*cc*ssv(v,j,i)
-              enddo
-            enddo
-          enddo
-#endif
+           do i=ilo,ihi
+             do j=jlo,jhi
+               do v=1,nvir
+                 h2(v,j) = h2(v,j) + scale*c(i,b)*ssv(v,j,i)
+               enddo
+             enddo
+           enddo
 #ifndef NOCOMMS
-          ab = (a-olo)*nocc+b-ostart+1
+           ab = (a-olo)*nocc+b-ostart+1
 #ifdef ACC_STRIPS
-          call util_gacc_strips(g_exch,jvlo,jvhi,ab,ab,h2,nnj,1.d0,
-     X         nvir)
+           call util_gacc_strips(g_exch,jvlo,jvhi,ab,ab,h2,nnj,1.d0,
+     &                           nvir)
 #else           
-       call ga_acc(g_exch,jvlo,jvhi,ab,ab,h2,nnj,1.d0)
+           call ga_acc(g_exch,jvlo,jvhi,ab,ab,h2,nnj,1.d0)
 #endif
 #endif
          enddo
@@ -648,7 +582,7 @@ c
 
       ofroz = ostart - 1
       nvir = vhi - vlo + 1
-      call ga_sync
+      call ga_sync()
       my_id = ga_nodeid()
       call ga_distribution(g_exch, my_id, rlo, rhi, clo, chi )
 #ifdef BAD_GACCESS
@@ -687,7 +621,7 @@ c
       if(.not.ma_pop_stack(l_local)) call 
      $     errquit('moints2x: popstack failed',0,0)
 #endif
-      call ga_sync
+      call ga_sync()
       return
       end
       subroutine mo_trp_trf2J( nbf, ostart, olo, ohi, ilo, ihi,
@@ -719,7 +653,7 @@ cedo      do a=olo,ohi
 cstaggering
        olb=ohi-olo+1
 #ifdef USE_YFLOP
-      flops_ycount = flops_ycount + olb*nocc*ijlen*nbf*2
+       flops_ycount = flops_ycount + olb*nocc*ijlen*nbf*2
 #endif
        do ain=ga_nodeid()+1,ga_nodeid()+olb
           a=mod(ain,olb)+olo
@@ -796,7 +730,7 @@ cstaggering
       integer l_local
 #endif
 
-      call ga_sync
+      call ga_sync()
 
       ofroz = ostart - 1
       aoff = ((olo-ofroz)*(olo-ofroz-1))/2
