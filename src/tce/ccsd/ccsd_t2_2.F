@@ -2393,9 +2393,6 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
              IF (next.eq.count) THEN
               dimc = int_mb(k_range+p3b-1) * int_mb(k_range+h10b-1)
      &             * int_mb(k_range+h1b-1) * int_mb(k_range+h2b-1)
-!              IF (.not.MA_PUSH_GET(mt_dbl,dimc,'cs',l_cs,k_cs))
-!     &          CALL ERRQUIT('ccsd_t2_2_6',0,MA_ERR)
-!              CALL DFILL(dimc,0.0d0,dbl_mb(k_cs),1)
               f_c = 0.0d0
               DO p5b_in =ga_nodeid(),ga_nodeid()+nvab-1
                p5b=mod(p5b_in,nvab)+noab+1
@@ -2419,10 +2416,6 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                      * int_mb(k_range+h10b-1)
                   dimb = dim_common * dimb_sort ! ppph
                   IF ((dima .gt. 0) .and. (dimb .gt. 0)) THEN
-!                   IF (.not.MA_PUSH_GET(mt_dbl,dima,'as',l_as,k_as))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',1,MA_ERR)
-!                   IF (.not.MA_PUSH_GET(mt_dbl,dima,'a',l_a,k_a))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',2,MA_ERR)
                    CALL GET_HASH_BLOCK(d_a,f_t,dima,int_mb(k_a_offset),
      &                                 (h2b_1-1+noab*(h1b_1-1+noab*
      &                            (p6b_1-noab-1+nvab*(p5b_1-noab-1)))))
@@ -2430,12 +2423,6 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                     int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
      &                     int_mb(k_range+h1b-1),int_mb(k_range+h2b-1),
      &                     4,3,2,1,1.0d0)
-!                   IF (.not.MA_POP_STACK(l_a))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',3,MA_ERR)
-!                   IF (.not.MA_PUSH_GET(mt_dbl,dimb,'bs',l_bs,k_bs))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',4,MA_ERR)
-!                   IF (.not.MA_PUSH_GET(mt_dbl,dimb,'b',l_b,k_b))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',5,MA_ERR)
                    IF ((h10b .le. p3b)) THEN
                     if(.not.intorb) then
                      CALL GET_HASH_BLOCK(d_b,f_t,dimb,
@@ -2456,8 +2443,6 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                     int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
      &                     1,2,4,3,1.0d0)
                    END IF
-!                   IF (.not.MA_POP_STACK(l_b))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',6,MA_ERR)
                    nsuperp(1) = 1
                    nsuperp(2) = 1
                    isuperp = 1
@@ -2483,17 +2468,11 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                                FACTORIAL(nsuperp(2)),
      &                          f_a,k,f_b,k,1.0d0,f_c,m)
                    end block
-!                   IF (.not.MA_POP_STACK(l_bs))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',7,MA_ERR)
-!                   IF (.not.MA_POP_STACK(l_as))
-!     &                  CALL ERRQUIT('ccsd_t2_2_6',8,MA_ERR)
                   END IF
                  END IF
                 END IF
                END DO
               END DO
-!              IF (.not.MA_PUSH_GET(mt_dbl,dimc,'c',l_c,k_c))
-!     &              CALL ERRQUIT('ccsd_t2_2_6',9,MA_ERR)
               CALL TCE_SORT_4_X(f_c,f_t,
      &                  int_mb(k_range+h10b-1),int_mb(k_range+p3b-1),
      &                  int_mb(k_range+h2b-1),int_mb(k_range+h1b-1),
@@ -2502,10 +2481,6 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                            int_mb(k_c_offset),
      &                            (h2b-1+noab*(h1b-1+noab*
      &                            (h10b-1+noab*(p3b-noab-1)))))
-!              IF (.not.MA_POP_STACK(l_c))
-!     &              CALL ERRQUIT('ccsd_t2_2_6',10,MA_ERR)
-!              IF (.not.MA_POP_STACK(l_cs))
-!     &              CALL ERRQUIT('ccsd_t2_2_6',11,MA_ERR)
               next = NXTASK(nprocs, 1)
              END IF
              count = count + 1
