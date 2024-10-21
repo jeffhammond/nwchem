@@ -194,7 +194,7 @@ c
      &                    d_i1,k_i1_offset)
       else if (ccsd_t2_2_alg.eq.2) then
          CALL ccsd_t2_2_6_x(d_t2,k_t2_offset,d_v2,k_v2_offset,
-     &                      d_i1,k_i1_offset)
+     &                      d_i1,k_i1_offset,maxh,maxp)
       else
         CALL errquit('ccsd_t2_2_alg',ccsd_t2_2_alg,INPUT_ERR)
       endif
