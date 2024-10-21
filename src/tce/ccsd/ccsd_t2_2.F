@@ -2410,10 +2410,13 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
      &                                  p5b_1,p6b_1,h1b_1,h2b_1)
                   CALL TCE_RESTRICTED_4(p3b,h10b,p5b,p6b,
      &                                  p3b_2,h10b_2,p5b_2,p6b_2)
-                  dim_common = int_mb(k_range+p5b-1) * int_mb(k_range+p6b-1)
-                  dima_sort = int_mb(k_range+h1b-1) * int_mb(k_range+h2b-1)
+                  dim_common = int_mb(k_range+p5b-1) 
+     &                       * int_mb(k_range+p6b-1)
+                  dima_sort = int_mb(k_range+h1b-1)
+     &                      * int_mb(k_range+h2b-1)
                   dima = dim_common * dima_sort ! pphh
-                  dimb_sort = int_mb(k_range+p3b-1) * int_mb(k_range+h10b-1)
+                  dimb_sort = int_mb(k_range+p3b-1)
+     &                      * int_mb(k_range+h10b-1)
                   dimb = dim_common * dimb_sort ! ppph
                   IF ((dima .gt. 0) .and. (dimb .gt. 0)) THEN
 !                   IF (.not.MA_PUSH_GET(mt_dbl,dima,'as',l_as,k_as))
@@ -2422,11 +2425,11 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
 !     &                  CALL ERRQUIT('ccsd_t2_2_6',2,MA_ERR)
                    CALL GET_HASH_BLOCK(d_a,f_t,dima,int_mb(k_a_offset),
      &                                 (h2b_1-1+noab*(h1b_1-1+noab*
-     &                                 (p6b_1-noab-1+nvab*(p5b_1-noab-1)))))
+     &                            (p6b_1-noab-1+nvab*(p5b_1-noab-1)))))
                    CALL TCE_SORT_4_X(f_t,f_a,
-     &                             int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
-     &                             int_mb(k_range+h1b-1),int_mb(k_range+h2b-1),
-     &                             4,3,2,1,1.0d0)
+     &                     int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
+     &                     int_mb(k_range+h1b-1),int_mb(k_range+h2b-1),
+     &                     4,3,2,1,1.0d0)
 !                   IF (.not.MA_POP_STACK(l_a))
 !     &                  CALL ERRQUIT('ccsd_t2_2_6',3,MA_ERR)
 !                   IF (.not.MA_PUSH_GET(mt_dbl,dimb,'bs',l_bs,k_bs))
@@ -2436,22 +2439,22 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
                    IF ((h10b .le. p3b)) THEN
                     if(.not.intorb) then
                      CALL GET_HASH_BLOCK(d_b,f_t,dimb,
-     &                                   int_mb(k_b_offset),
-     &                                   (p6b_2-1+(noab+nvab)*(p5b_2-1+
-     &                                   (noab+nvab)*(p3b_2-1+(noab+nvab)*
-     &                                   (h10b_2-1)))))
+     &                              int_mb(k_b_offset),
+     &                              (p6b_2-1+(noab+nvab)*(p5b_2-1+
+     &                              (noab+nvab)*(p3b_2-1+(noab+nvab)*
+     &                              (h10b_2-1)))))
                     else
                      CALL GET_HASH_BLOCK_I(d_b,f_t,dimb,
-     &                                     int_mb(k_b_offset),
-     &                                     (p6b_2-1+(noab+nvab)*(p5b_2-1+
-     &                                     (noab+nvab)*(p3b_2-1+(noab+nvab)*
-     &                                     (h10b_2-1)))),
-     &                                     p6b_2,p5b_2,p3b_2,h10b_2)
+     &                              int_mb(k_b_offset),
+     &                              (p6b_2-1+(noab+nvab)*(p5b_2-1+
+     &                              (noab+nvab)*(p3b_2-1+(noab+nvab)*
+     &                              (h10b_2-1)))),
+     &                              p6b_2,p5b_2,p3b_2,h10b_2)
                     end if
                     CALL TCE_SORT_4_X(f_t,f_b,
-     &                           int_mb(k_range+h10b-1),int_mb(k_range+p3b-1),
-     &                           int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
-     &                           1,2,4,3,1.0d0)
+     &                     int_mb(k_range+h10b-1),int_mb(k_range+p3b-1),
+     &                     int_mb(k_range+p5b-1),int_mb(k_range+p6b-1),
+     &                     1,2,4,3,1.0d0)
                    END IF
 !                   IF (.not.MA_POP_STACK(l_b))
 !     &                  CALL ERRQUIT('ccsd_t2_2_6',6,MA_ERR)
@@ -2492,9 +2495,9 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1/2 * Sum ( p5 p6 ) * t ( p5 p6 h1 h2 )_t * v (
 !              IF (.not.MA_PUSH_GET(mt_dbl,dimc,'c',l_c,k_c))
 !     &              CALL ERRQUIT('ccsd_t2_2_6',9,MA_ERR)
               CALL TCE_SORT_4_X(f_c,f_t,
-     &                        int_mb(k_range+h10b-1),int_mb(k_range+p3b-1),
-     &                        int_mb(k_range+h2b-1),int_mb(k_range+h1b-1),
-     &                        2,1,4,3,0.5d0)
+     &                  int_mb(k_range+h10b-1),int_mb(k_range+p3b-1),
+     &                  int_mb(k_range+h2b-1),int_mb(k_range+h1b-1),
+     &                  2,1,4,3,0.5d0)
               CALL ADD_HASH_BLOCK(d_c,f_t,dimc,
      &                            int_mb(k_c_offset),
      &                            (h2b-1+noab*(h1b-1+noab*
