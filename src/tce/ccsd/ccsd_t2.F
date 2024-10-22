@@ -191,8 +191,17 @@ c
       CALL ccsd_t2_2_5_2(d_t1,k_t1_offset,d_v2,k_v2_offset,
      1                   d_i2,k_i2_offset)
       CALL RECONCILEFILE(d_i2,size_i2)
-      CALL ccsd_t2_2_5(d_t2,k_t2_offset,d_i2,k_i2_offset,
-     1                 d_i1,k_i1_offset)
+
+      if (ccsd_t2_2_alg.eq.1) then
+        CALL ccsd_t2_2_5(d_t2,k_t2_offset,d_i2,k_i2_offset,
+     &                   d_i1,k_i1_offset)
+      else if (ccsd_t2_2_alg.eq.2) then
+        CALL ccsd_t2_2_5_x(d_t2,k_t2_offset,d_i2,k_i2_offset,
+     &                     d_i1,k_i1_offset,maxh,maxp)
+      else
+        CALL errquit('ccsd_t2_2_alg',ccsd_t2_2_alg,INPUT_ERR)
+      endif
+
       CALL DELETEFILE(d_i2)
       IF (.not.MA_POP_STACK(l_i2_offset)) 
      1    CALL ERRQUIT('ccsd_t2',-1,MA_ERR)
