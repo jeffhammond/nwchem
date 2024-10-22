@@ -2437,18 +2437,18 @@ C     i1 ( h10 p3 h1 h2 )_vt + = 1 * P( 2 ) * Sum ( h7 p9 ) * t ( p3 p9 h1 h7 )_
      &                      int_mb(k_b_offset),(p9b_2-noab-1+nvab*
      &                      (h2b_2-1+noab*(h10b_2-1+noab*(h7b_2-1)))))
                      CALL TCE_SORT_4_X(f_t,f_b,
-     &                      int_mb(k_range+h7b-1),int_mb(k_range+h10b-1),
-     &                      int_mb(k_range+h2b-1),int_mb(k_range+p9b-1),
-     &                      3,2,1,4,1.0d0)
+     &                    int_mb(k_range+h7b-1),int_mb(k_range+h10b-1),
+     &                    int_mb(k_range+h2b-1),int_mb(k_range+p9b-1),
+     &                    3,2,1,4,1.0d0)
                    END IF
                    IF ((h10b .lt. h7b)) THEN
                      CALL GET_HASH_BLOCK(d_b,f_t,dimb,
      &                      int_mb(k_b_offset),(p9b_2-noab-1+nvab*
      &                      (h2b_2-1+noab*(h7b_2-1+noab*(h10b_2-1)))))
                      CALL TCE_SORT_4_X(f_t,f_b,
-     &                      int_mb(k_range+h10b-1),int_mb(k_range+h7b-1),
-     &                      int_mb(k_range+h2b-1),int_mb(k_range+p9b-1),
-     &                      3,1,2,4,-1.0d0)
+     &                    int_mb(k_range+h10b-1),int_mb(k_range+h7b-1),
+     &                    int_mb(k_range+h2b-1),int_mb(k_range+p9b-1),
+     &                    3,1,2,4,-1.0d0)
                    END IF
                    !IF (.not.MA_POP_STACK(l_b)) CALL ERRQUIT('ccsd_t2_2_5',6,MA_ERR)
                    !CALL DGEMM('T','N',dima_sort,dimb_sort,dim_common,1.0d0,dbl_mb(k_as),dim_common,dbl_mb(k_bs),dim_common,1.0d0,dbl_mb(k_cs),dima_sort)

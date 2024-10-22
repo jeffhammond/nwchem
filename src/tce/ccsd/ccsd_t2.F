@@ -353,9 +353,9 @@ c -----------------------
      &                   d_i1,k_i1_offset,maxh,maxp)
       else if (ccsd_t2_7_alg.eq.3) then
         CALL ccsd_t2_7_1(d_v2,k_v2_offset,
-     &                     d_i1,k_i1_offset,maxh,maxp)
+     &                   d_i1,k_i1_offset)
         CALL ccsd_t2_7_2(d_t1,k_t1_offset,d_v2,k_v2_offset,
-     &                   d_i1,k_i1_offset,maxh,maxp)
+     &                   d_i1,k_i1_offset)
         CALL ccsd_t2_7_3_x(d_t2,k_t2_offset,d_v2,k_v2_offset,
      &                   d_i1,k_i1_offset,maxh,maxp)
       else
