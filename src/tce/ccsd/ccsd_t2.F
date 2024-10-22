@@ -345,8 +345,8 @@ c -----------------------
      &                   d_i1,k_i1_offset)
       else if (ccsd_t2_7_alg.eq.2) then
         ! no GPU in 7_1_x yet - it just does transpose
-        CALL ccsd_t2_7_1_x(d_v2,k_v2_offset,
-     &                     d_i1,k_i1_offset,maxh,maxp)
+        CALL ccsd_t2_7_1(d_v2,k_v2_offset,
+     &                   d_i1,k_i1_offset) !,maxh,maxp)
         CALL ccsd_t2_7_2_x(d_t1,k_t1_offset,d_v2,k_v2_offset,
      &                   d_i1,k_i1_offset,maxh,maxp)
         CALL ccsd_t2_7_3_x(d_t2,k_t2_offset,d_v2,k_v2_offset,

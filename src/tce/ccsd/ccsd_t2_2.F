@@ -2000,8 +2000,8 @@ C     i2 ( h10 h11 h1 h2 )_vt + = -1/2 * Sum ( p7 p8 ) * t ( p7 p8 h1 h2 )_t * v
       next = NXTASK(nprocs, 1)
 
       dima = maxh*maxh*maxp*maxp ! hhpp
-      dimb = maxh*maxp*maxp*maxp ! hppp
-      dimc = maxh*maxh*maxh*maxp ! hhhp
+      dimb = maxh*maxp*maxh*maxp ! hhpp
+      dimc = maxh*maxh*maxh*maxh ! hhhh
       dimt = max(dima,dimb,dimc)
 
       e_a = 0
