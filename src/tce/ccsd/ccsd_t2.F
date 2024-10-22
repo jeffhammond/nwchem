@@ -155,8 +155,17 @@ c
       CALL DELETEFILE(d_i3)
       IF (.not.MA_POP_STACK(l_i3_offset)) 
      1    CALL ERRQUIT('ccsd_t2',-1,MA_ERR)
-      CALL ccsd_t2_2_2_3(d_t2,k_t2_offset,d_v2,k_v2_offset,
-     1                   d_i2,k_i2_offset)
+
+      if (ccsd_t2_2_alg.eq.1) then
+        CALL ccsd_t2_2_2_3(d_t2,k_t2_offset,d_v2,k_v2_offset,
+     1                     d_i2,k_i2_offset)
+      else if (ccsd_t2_2_alg.eq.2) then
+        CALL ccsd_t2_2_2_3_x(d_t2,k_t2_offset,d_v2,k_v2_offset,
+     1                       d_i2,k_i2_offset,maxh,maxp)
+      else
+        CALL errquit('ccsd_t2_2_alg',ccsd_t2_2_alg,INPUT_ERR)
+      endif
+
       CALL RECONCILEFILE(d_i2,size_i2)
       CALL ccsd_t2_2_2(d_t1,k_t1_offset,d_i2,k_i2_offset,
      1                 d_i1,k_i1_offset)
