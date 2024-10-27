@@ -724,7 +724,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                     CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                   int_mb(k_a_offset),(h1b_1-1+noab*(h6b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p5b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t,f_a,
+                    CALL TCE_SORT_4_X(f_t,f_a,
      &                   int_mb(k_range+p5b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h1b-1),
      &                   4,2,3,1,1.0d0)
@@ -733,7 +733,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                     CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                   int_mb(k_a_offset),(h6b_1-1+noab*(h1b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p5b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t,f_a,
+                    CALL TCE_SORT_4_X(f_t,f_a,
      &                   int_mb(k_range+p5b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h1b-1),int_mb(k_range+h6b-1),
      &                   3,2,4,1,-1.0d0)
@@ -742,7 +742,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                     CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                   int_mb(k_a_offset),(h1b_1-1+noab*(h6b_1-1+noab*
      &                   (p5b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t,f_a,
+                    CALL TCE_SORT_4_X(f_t,f_a,
      &                   int_mb(k_range+p3b-1),int_mb(k_range+p5b-1),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h1b-1),
      &                   4,1,3,2,-1.0d0)
@@ -751,7 +751,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                     CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                   int_mb(k_a_offset),(h6b_1-1+noab*(h1b_1-1+noab*
      &                   (p5b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t,f_a,
+                    CALL TCE_SORT_4_X(f_t,f_a,
      &                   int_mb(k_range+p3b-1),int_mb(k_range+p5b-1),
      &                   int_mb(k_range+h1b-1),int_mb(k_range+h6b-1),
      &                   3,1,4,2,1.0d0)
@@ -759,7 +759,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                    CALL GET_HASH_BLOCK(d_b,f_t,dimb,
      &                  int_mb(k_b_offset),(h6b_2-1+noab*(p5b_2-noab-1+
      &                  nvab*(h2b_2-1+noab*(p4b_2-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t,f_b,
+                   CALL TCE_SORT_4_X(f_t,f_b,
      &                  int_mb(k_range+p4b-1),int_mb(k_range+h6b-1),
      &                  int_mb(k_range+h2b-1),int_mb(k_range+p5b-1),
      &                  3,1,2,4,1.0d0)
@@ -784,7 +784,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
                END DO
               END DO
               IF ((p3b .le. p4b) .and. (h1b .le. h2b)) THEN
-               CALL TCE_SORT_4_x(f_c,f_t,
+               CALL TCE_SORT_4_X(f_c,f_t,
      &              int_mb(k_range+h2b-1),int_mb(k_range+p4b-1),
      &              int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &              4,2,3,1,-1.0d0)
@@ -793,7 +793,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
      &              (p4b-noab-1+nvab*(p3b-noab-1)))))
               END IF
               IF ((p3b .le. p4b) .and. (h2b .le. h1b)) THEN
-               CALL TCE_SORT_4_x(f_c,f_t,
+               CALL TCE_SORT_4_X(f_c,f_t,
      &              int_mb(k_range+h2b-1),int_mb(k_range+p4b-1),
      &              int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &              4,2,1,3,1.0d0)
@@ -802,7 +802,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
      &              (p4b-noab-1+nvab*(p3b-noab-1)))))
               END IF
               IF ((p4b .le. p3b) .and. (h1b .le. h2b)) THEN
-               CALL TCE_SORT_4_x(f_c,f_t,
+               CALL TCE_SORT_4_X(f_c,f_t,
      &              int_mb(k_range+h2b-1),int_mb(k_range+p4b-1),
      &              int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &              2,4,3,1,1.0d0)
@@ -811,7 +811,7 @@ C     i0 ( p3 p4 h1 h2 )_vt+= -1*P( 4 )*Sum ( h6 p5 )*t ( p3 p5 h1 h6 )_t*i1 ( h
      &              (p3b-noab-1+nvab*(p4b-noab-1)))))
               END IF
               IF ((p4b .le. p3b) .and. (h2b .le. h1b)) THEN
-               CALL TCE_SORT_4_x(f_c,f_t,
+               CALL TCE_SORT_4_X(f_c,f_t,
      &              int_mb(k_range+h2b-1),int_mb(k_range+p4b-1),
      &              int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &              2,4,1,3,-1.0d0)
@@ -1187,7 +1187,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                     CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                   int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p7b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t,f_a,
+                    CALL TCE_SORT_4_X(f_t,f_a,
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
      &                   3,2,4,1,-1.0d0)
@@ -1196,7 +1196,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                    CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                  int_mb(k_a_offset),(h1b_1-1+noab*(h8b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t,f_a,
+                   CALL TCE_SORT_4_X(f_t,f_a,
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h1b-1),
      &                  4,1,3,2,-1.0d0)
@@ -1205,7 +1205,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                    CALL GET_HASH_BLOCK(d_a,f_t,dima,
      &                  int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t,f_a,
+                   CALL TCE_SORT_4_X(f_t,f_a,
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
      &                  3,1,4,2,1.0d0)
@@ -1222,7 +1222,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                    (p7b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                    (h8b_2-1)))),p5b_2,p7b_2,h6b_2,h8b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t,f_b,
+                    CALL TCE_SORT_4_X(f_t,f_b,
      &                   int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
      &                   4,2,1,3,1.0d0)
@@ -1239,7 +1239,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                   (h8b_2-1)))),p7b_2,p5b_2,h6b_2,h8b_2)
                     end if
-                   CALL TCE_SORT_4_x(f_t,f_b,
+                   CALL TCE_SORT_4_X(f_t,f_b,
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                  int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
      &                  3,2,1,4,-1.0d0)
@@ -1256,7 +1256,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p7b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p5b_2,p7b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t,f_b,
+                    CALL TCE_SORT_4_X(f_t,f_b,
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
      &                   4,1,2,3,-1.0d0)
@@ -1273,7 +1273,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p7b_2,p5b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t,f_b,
+                    CALL TCE_SORT_4_X(f_t,f_b,
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
      &                   3,1,2,4,1.0d0)
@@ -1298,7 +1298,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                 END IF
                END DO
               END DO
-              CALL TCE_SORT_4_x(f_c,f_t,
+              CALL TCE_SORT_4_X(f_c,f_t,
      &             int_mb(k_range+p5b-1),int_mb(k_range+h6b-1),
      &             int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &             4,2,3,1,-1.0d0/2.0d0)
@@ -1426,7 +1426,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                     CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                   int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p7b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                    CALL TCE_SORT_4_X(f_t(:,phase),f_a(:,phase),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
      &                   3,2,4,1,-1.0d0)
@@ -1435,7 +1435,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                    CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                  int_mb(k_a_offset),(h1b_1-1+noab*(h8b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                   CALL TCE_SORT_4_X(f_t(:,phase),f_a(:,phase),
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h1b-1),
      &                  4,1,3,2,-1.0d0)
@@ -1444,7 +1444,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                    CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                  int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                   CALL TCE_SORT_4_X(f_t(:,phase),f_a(:,phase),
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
      &                  3,1,4,2,1.0d0)
@@ -1461,7 +1461,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                    (p7b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                    (h8b_2-1)))),p5b_2,p7b_2,h6b_2,h8b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_X(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
      &                   4,2,1,3,1.0d0)
@@ -1478,7 +1478,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                   (h8b_2-1)))),p7b_2,p5b_2,h6b_2,h8b_2)
                     end if
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                   CALL TCE_SORT_4_X(f_t(:,phase),f_b(:,phase),
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                  int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
      &                  3,2,1,4,-1.0d0)
@@ -1495,7 +1495,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p7b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p5b_2,p7b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_X(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
      &                   4,1,2,3,-1.0d0)
@@ -1512,7 +1512,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p7b_2,p5b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_X(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
      &                   3,1,2,4,1.0d0)
@@ -1538,7 +1538,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                 END IF
                END DO
               END DO
-              CALL TCE_SORT_4_x(f_c(:,phase),f_t(:,phase),
+              CALL TCE_SORT_4_X(f_c(:,phase),f_t(:,phase),
      &             int_mb(k_range+p5b-1),int_mb(k_range+h6b-1),
      &             int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
      &             4,2,3,1,-1.0d0/2.0d0)
@@ -1589,8 +1589,8 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
       integer :: p7b_in,h8b_in
       integer :: dima, dimb, dimc, dima_sort, dimb_sort, dim_common
       integer :: dimhhpp
-      double precision, allocatable, dimension(:,:), device :: f_a, f_b, f_c
-      double precision, allocatable, dimension(:,:), pinned :: f_t
+      double precision, allocatable, target, dimension(:,:), device :: f_a, f_b, f_c
+      double precision, allocatable, target, dimension(:,:), pinned :: f_t
       integer :: e_a
 
       INTEGER :: next, nprocs, count
@@ -1601,7 +1601,7 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
       integer(kind=cuda_stream_kind) :: stream(2)
       type(cublasHandle) :: handle(2)
 
-      integer :: phase
+      integer :: phase, shi
       integer, parameter :: numphases = 2
 
       nprocs = GA_NNODES()
@@ -1616,13 +1616,15 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
         CALL ERRQUIT('ccsd_t2_7_3_cublas',dimhhpp*4,MA_ERR)
       end if
 
-      do phase=1,numphases
-        err = cudaStreamCreate(stream(phase))
+      do shi=1,numphases
+        err = cudaStreamCreate(stream(shi))
         if (err.ne.0) call errquit('cudaStreamCreate',err,UNKNOWN_ERR)
-        err = cublasCreate(handle(phase))
+        err = cublasCreate(handle(shi))
         if (err.ne.0) call errquit('cublasCreate',err,UNKNOWN_ERR)
-        err = cublasSetStream(handle(phase), stream(phase))
+        err = cublasSetStream(handle(shi), stream(shi))
         if (err.ne.0) call errquit('cublasSetStream',err,UNKNOWN_ERR)
+        err = cudaStreamSynchronize(stream(shi))
+        if (err.ne.0) call errquit('cudaStreamSync',err,UNKNOWN_ERR)
       end do
 
       phase = 1
@@ -1642,7 +1644,8 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
              IF (next.eq.count) THEN
               dimc = int_mb(k_range+p3b-1)*int_mb(k_range+h6b-1) 
      &             * int_mb(k_range+h1b-1)*int_mb(k_range+p5b-1)
-              f_c(:,phase) = 0.0d0
+              !f_c(:,phase) = 0.0d0
+              f_c = 0.0d0 ! necessary
               do h8b_in=ga_nodeid(),ga_nodeid()+noab-1
                h8b=mod(h8b_in,noab)+1
                do p7b_in=ga_nodeid()+1,ga_nodeid()+nvab
@@ -1665,41 +1668,45 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                   dima = dim_common * dima_sort
                   dimb = dim_common * dimb_sort
                   IF ((dima .gt. 0) .and. (dimb .gt. 0)) THEN
+                   err = cudaStreamSynchronize(stream(phase))
+                   if (err.ne.0) then
+                     call errquit('cudaStreamSync',err,UNKNOWN_ERR)
+                   endif
                    IF ((p7b .lt. p3b) .and. (h8b .lt. h1b)) THEN
                     CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                   int_mb(k_a_offset),(h1b_1-1+noab*(h8b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p7b_1-noab-1)))))
-                    CALL TCE_SORT_4_X(f_t(:,phase),f_a(:,phase),
+                    CALL TCE_SORT_4_Y(f_t(:,phase),f_a(:,phase),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h8b-1),int_mb(k_range+h1b-1),
-     &                   4,2,3,1,1.0d0)
+     &                   4,2,3,1,1.0d0,phase)
                    END IF
                    IF ((p7b .lt. p3b) .and. (h1b .le. h8b)) THEN
                     CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                   int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                   (p3b_1-noab-1+nvab*(p7b_1-noab-1)))))
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                    CALL TCE_SORT_4_Y(f_t(:,phase),f_a(:,phase),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p3b-1),
      &                   int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
-     &                   3,2,4,1,-1.0d0)
+     &                   3,2,4,1,-1.0d0,phase)
                    END IF
                    IF ((p3b .le. p7b) .and. (h8b .lt. h1b)) THEN
                    CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                  int_mb(k_a_offset),(h1b_1-1+noab*(h8b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                   CALL TCE_SORT_4_Y(f_t(:,phase),f_a(:,phase),
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h1b-1),
-     &                  4,1,3,2,-1.0d0)
+     &                  4,1,3,2,-1.0d0,phase)
                    END IF
                    IF ((p3b .le. p7b) .and. (h1b .le. h8b)) THEN
                    CALL GET_HASH_BLOCK(d_a,f_t(:,phase),dima,
      &                  int_mb(k_a_offset),(h8b_1-1+noab*(h1b_1-1+noab*
      &                  (p7b_1-noab-1+nvab*(p3b_1-noab-1)))))
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_a(:,phase),
+                   CALL TCE_SORT_4_Y(f_t(:,phase),f_a(:,phase),
      &                  int_mb(k_range+p3b-1),int_mb(k_range+p7b-1),
      &                  int_mb(k_range+h1b-1),int_mb(k_range+h8b-1),
-     &                  3,1,4,2,1.0d0)
+     &                  3,1,4,2,1.0d0,phase)
                    END IF
                    IF ((h8b .lt. h6b) .and. (p7b .lt. p5b)) THEN
                     if(.not.intorb) then
@@ -1713,10 +1720,10 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                    (p7b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                    (h8b_2-1)))),p5b_2,p7b_2,h6b_2,h8b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_Y(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
-     &                   4,2,1,3,1.0d0)
+     &                   4,2,1,3,1.0d0,phase)
                    END IF
                    IF ((h8b .lt. h6b) .and. (p5b .le. p7b)) THEN
                     if(.not.intorb) then
@@ -1730,10 +1737,10 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h6b_2-1+(noab+nvab)*
      &                   (h8b_2-1)))),p7b_2,p5b_2,h6b_2,h8b_2)
                     end if
-                   CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                   CALL TCE_SORT_4_Y(f_t(:,phase),f_b(:,phase),
      &                  int_mb(k_range+h8b-1),int_mb(k_range+h6b-1),
      &                  int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
-     &                  3,2,1,4,-1.0d0)
+     &                  3,2,1,4,-1.0d0,phase)
                    END IF
                    IF ((h6b .le. h8b) .and. (p7b .lt. p5b)) THEN
                     if(.not.intorb) then
@@ -1747,10 +1754,10 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p7b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p5b_2,p7b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_Y(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p7b-1),int_mb(k_range+p5b-1),
-     &                   4,1,2,3,-1.0d0)
+     &                   4,1,2,3,-1.0d0,phase)
                    END IF
                    IF ((h6b .le. h8b) .and. (p5b .le. p7b)) THEN
                     if(.not.intorb) then
@@ -1764,14 +1771,15 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
      &                   (p5b_2-1+(noab+nvab)*(h8b_2-1+(noab+nvab)*
      &                   (h6b_2-1)))),p7b_2,p5b_2,h8b_2,h6b_2)
                     end if
-                    CALL TCE_SORT_4_x(f_t(:,phase),f_b(:,phase),
+                    CALL TCE_SORT_4_Y(f_t(:,phase),f_b(:,phase),
      &                   int_mb(k_range+h6b-1),int_mb(k_range+h8b-1),
      &                   int_mb(k_range+p5b-1),int_mb(k_range+p7b-1),
-     &                   3,1,2,4,1.0d0)
+     &                   3,1,2,4,1.0d0,phase)
                    END IF
                    block
                     ! the CUBLAS interface only support INT32
                     use iso_fortran_env, only: INT32
+                    !use cublas, only : DGEMM
                     use cublas, only : cublasDgemm_v2, CUBLAS_OP_N, CUBLAS_OP_T
                     integer(INT32), parameter :: cu_op_n = CUBLAS_OP_N
                     integer(INT32), parameter :: cu_op_t = CUBLAS_OP_T
@@ -1786,29 +1794,31 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
                     if (err.ne.0) then
                       call errquit('cublasDgemm_v2',err,UNKNOWN_ERR)
                     endif
-                    err = cudaDeviceSynchronize()
-                    if (err.ne.0) then
-                      call errquit('cudaDeviceSync',err,UNKNOWN_ERR)
-                    endif
                    end block
-                   !if (phase.eq.1) then
-                   !  phase = 2
-                   !else if (phase.eq.2) then
-                   !  phase = 1
-                   !end if
+                   if (phase.eq.1) then
+                     phase = 2
+                   else if (phase.eq.2) then
+                     phase = 1
+                   else
+                    stop phase
+                   end if
                   END IF
                  END IF
                 END IF
                END DO
               END DO
-              do phase=1,1!numphases
-                CALL TCE_SORT_4_x(f_c(:,phase),f_t(:,phase),
-     &               int_mb(k_range+p5b-1),int_mb(k_range+h6b-1),
-     &               int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
-     &               4,2,3,1,-1.0d0/2.0d0)
-                CALL ADD_HASH_BLOCK(d_c,f_t(:,phase),dimc,
-     &               int_mb(k_c_offset),(h6b-1+noab*(p5b-noab-1+nvab*
-     &               (h1b-1+noab*( p3b-noab-1)))))
+              err = cudaDeviceSynchronize()
+              if (err.ne.0) then
+                call errquit('cudaDeviceSync',err,UNKNOWN_ERR)
+              endif
+              do shi=1,numphases
+              CALL TCE_SORT_4_Y(f_c(:,shi),f_t(:,shi),
+     &             int_mb(k_range+p5b-1),int_mb(k_range+h6b-1),
+     &             int_mb(k_range+h1b-1),int_mb(k_range+p3b-1),
+     &             4,2,3,1,-1.0d0/2.0d0,shi)
+              CALL ADD_HASH_BLOCK(d_c,f_t(:,shi),dimc,
+     &             int_mb(k_c_offset),(h6b-1+noab*(p5b-noab-1+nvab*
+     &             (h1b-1+noab*( p3b-noab-1)))))
               enddo
               next = NXTASK(nprocs, 1)
              END IF
@@ -1826,10 +1836,10 @@ C     i1 ( h6 p3 h1 p5 )_vt+=-1/2*Sum ( h8 p7 )*t ( p3 p7 h1 h8 )_t*v ( h6 h8 p5
         CALL ERRQUIT('ccsd_t2_7_3_cublas deallocate',e_a,MA_ERR)
       end if
 
-      do phase=1,numphases
-        err = cublasDestroy(handle(phase))
+      do shi=1,numphases
+        err = cublasDestroy(handle(shi))
         if (err.ne.0) call errquit('cublasDestroy',err,UNKNOWN_ERR)
-        err = cudaStreamDestroy(stream(phase))
+        err = cudaStreamDestroy(stream(shi))
         if (err.ne.0) call errquit('cudaStreamDestroy',err,UNKNOWN_ERR)
       end do
 
