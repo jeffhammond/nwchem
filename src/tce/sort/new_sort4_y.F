@@ -7,7 +7,6 @@
       double precision, intent(in) :: f
       integer :: version
       version = 1000*i+100*j+10*k+l
-      print*,'BEFORE',phase
       if (version.eq.1234) then
         call transpose_1234_y(u,s,a,b,c,d,f,async)
       elseif (version.eq.1243) then
@@ -59,7 +58,6 @@
       else
         print*,'something is wrong...'
       endif
-      print*,'AFTER',phase
       end
         subroutine transpose_1234_y(u,s,d1,d2,d3,d4,f,async)
         implicit none
