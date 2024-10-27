@@ -7,6 +7,7 @@
       double precision, intent(in) :: f
       integer :: version
       version = 1000*i+100*j+10*k+l
+      print*,'BEFORE',phase
       if (version.eq.1234) then
         call transpose_1234_y(u,s,a,b,c,d,f,async)
       elseif (version.eq.1243) then
@@ -58,6 +59,7 @@
       else
         print*,'something is wrong...'
       endif
+      print*,'AFTER',phase
       end
         subroutine transpose_1234_y(u,s,d1,d2,d3,d4,f,async)
         implicit none
@@ -67,6 +69,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !!$acc parallel loop async(async)
         !do concurrent(j2 = 1:d2, j1 = 1:d1, j3 = 1:d3, j4 = 1:d4)
         !    old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
         !    new_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
@@ -84,6 +87,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j2 = 1:d2, j3 = 1:d3, j4 = 1:d4)
             !s(j3+d3*(j4-1+d4*(j2-1+d2*(j1-1)))) = f*u(j4+d4*(j3-1+d3*(j2-1+d2*(j1-1))))
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
@@ -99,6 +103,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j3 = 1:d3, j2 = 1:d2, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j4+d4*(j2-1+d2*(j3-1+d3*(j1-1)))
@@ -113,6 +118,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j3 = 1:d3, j2 = 1:d2, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j4-1+d4*(j3-1+d3*(j1-1)))
@@ -127,6 +133,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j2 = 1:d2, j4 = 1:d4, j3 = 1:d3)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j3+d3*(j2-1+d2*(j4-1+d4*(j1-1)))
@@ -141,6 +148,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j3 = 1:d3, j4 = 1:d4, j2 = 1:d2)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j3-1+d3*(j4-1+d4*(j1-1)))
@@ -155,6 +163,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j2 = 1:d2, j3 = 1:d3, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j4+d4*(j3-1+d3*(j1-1+d1*(j2-1)))
@@ -169,6 +178,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j2 = 1:d2, j3 = 1:d3, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j3+d3*(j4-1+d4*(j1-1+d1*(j2-1)))
@@ -183,6 +193,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j1 = 1:d1, j3 = 1:d3, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j4+d4*(j1-1+d1*(j3-1+d3*(j2-1)))
@@ -197,6 +208,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j1 = 1:d1, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j4-1+d4*(j3-1+d3*(j2-1)))
@@ -211,6 +223,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j1 = 1:d1, j4 = 1:d4, j3 = 1:d3)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j3+d3*(j1-1+d1*(j4-1+d4*(j2-1)))
@@ -225,6 +238,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j1 = 1:d1, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j3-1+d3*(j4-1+d4*(j2-1)))
@@ -239,6 +253,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j4+d4*(j2-1+d2*(j1-1+d1*(j3-1)))
@@ -253,6 +268,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j4-1+d4*(j1-1+d1*(j3-1)))
@@ -267,6 +283,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j4+d4*(j1-1+d1*(j2-1+d2*(j3-1)))
@@ -281,6 +298,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j4-1+d4*(j2-1+d2*(j3-1)))
@@ -295,6 +313,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j1 = 1:d1, j3 = 1:d3, j2 = 1:d2, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j1-1+d1*(j4-1+d4*(j3-1)))
@@ -309,6 +328,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j1 = 1:d1, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j2-1+d2*(j4-1+d4*(j3-1)))
@@ -323,6 +343,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j3+d3*(j2-1+d2*(j1-1+d1*(j4-1)))
@@ -337,6 +358,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j3-1+d3*(j1-1+d1*(j4-1)))
@@ -351,6 +373,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j3+d3*(j1-1+d1*(j2-1+d2*(j4-1)))
@@ -365,6 +388,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j4 = 1:d4, j1 = 1:d1)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j3-1+d3*(j2-1+d2*(j4-1)))
@@ -379,6 +403,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j3 = 1:d3, j1 = 1:d1, j4 = 1:d4, j2 = 1:d2)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j2+d2*(j1-1+d1*(j3-1+d3*(j4-1)))
@@ -393,6 +418,7 @@
         double precision, intent(out) :: s(d1*d2*d3*d4)
         double precision, intent(in) :: u(d1*d2*d3*d4)
         double precision, intent(in) :: f
+        !$acc parallel loop async(async)
         do concurrent(j2 = 1:d2, j3 = 1:d3, j1 = 1:d1, j4 = 1:d4)
             old_offset = j4+d4*(j3-1+d3*(j2-1+d2*(j1-1)))
             new_offset = j1+d1*(j2-1+d2*(j3-1+d3*(j4-1)))
