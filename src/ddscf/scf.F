@@ -249,8 +249,8 @@ c
       if (ga_nodeid().eq.0) then
           print*,'JEFF'
           call int_1e_time(basis,basis,'kinetic')
-          call int_1e_time(basis,basis,'potential')
           call int_1e_time(basis,basis,'overlap')
+          call int_1e_time(basis,basis,'potential')
       endif
 c
 c     Form intial guess vectors
